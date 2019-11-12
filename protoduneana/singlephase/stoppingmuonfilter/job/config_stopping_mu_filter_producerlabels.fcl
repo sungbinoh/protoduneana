@@ -1,0 +1,14 @@
+BEGIN_PROLOG
+
+stoppingmufilterproducerlabels:
+{
+  PFPLabel         : "pandora"
+  TrackLabel       : "pandoraTrack"
+  ShowerLabel      : "pandoraShower"
+  HitLabel         : "linecluster"
+  SpacePointLabel  : "pandora"
+  T0Label          : "pandora"
+  CalorimetryLabel : "pandoracalo"
+}
+
+END_PROLOG
