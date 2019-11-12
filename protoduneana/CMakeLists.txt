@@ -1,6 +1,5 @@
-add_subdirectory(Analysis)
 add_subdirectory(TutorialExamples)
 add_subdirectory(PhysicsWeek)
-add_subdirectory(T0Reco)
 add_subdirectory(singlephase)
 add_subdirectory(EventGenerator)
+add_subdirectory(Utilities)

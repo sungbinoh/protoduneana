@@ -7,6 +7,7 @@ art_make( BASENAME_ONLY
                         larcore_Geometry_Geometry_service
                         nurandom_RandomUtils_NuRandomService_service
                         larsim_Simulation lardataobj_Simulation
+			lardataobj_RecoBase
                         nusimdata_SimulationBase
                         ${ART_FRAMEWORK_CORE}
                         ${ART_FRAMEWORK_PRINCIPAL}
@@ -26,7 +27,9 @@ art_make( BASENAME_ONLY
                         ${SQLITE3}
                         ${ROOT_EG}
                         ${IFDH}
-			ProtoDUNEAnaUtils
+			ProtoDUNEDataUtils
+                        ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
+                        ${ART_ROOT_IO_TFILESERVICE_SERVICE}
  )
 
 
