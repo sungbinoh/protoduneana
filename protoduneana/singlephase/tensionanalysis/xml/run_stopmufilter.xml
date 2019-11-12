@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+
+<!-- project details -->
+<!DOCTYPE project [
+<!ENTITY release "v08_15_00">
+<!ENTITY exp "dune">
+<!ENTITY name "stopmu_data_withfembfilter_first_half">
+<!ENTITY scratch_dir "/pnfs/&exp;/scratch/users/alister1/&name;">
+<!ENTITY resilient_dir "/pnfs/&exp;/resilient/users/alister1/">
+<!ENTITY data_dir "/pnfs/&exp;/scratch/users/alister1/&name;_datadir">
+]>
+
+<job>
+
+  <project name="&name;">
+
+    <!-- project size -->
+    <numevents>100000</numevents>
+
+    <!-- batchOS -->
+    <os>SL6</os>
+
+    <resource>DEDICATED,OPPORTUNISTIC</resource>
+
+    <!-- larsoft info -->
+    <larsoft>
+      <tag>&release;</tag>
+      <qual>e15:prof</qual>
+      <local>/pnfs/dune/resilient/users/alister1/dunetpc_v08_15_00.tar</local>
+    </larsoft>
+
+    <!-- filter -->
+    <stage name="filter">
+      <inputdef>alister1_np04_full-reconstructed_v07_08_00_unified_physics_10klimit</inputdef>
+      <fcl>run_stopping_mu_filter_withallfembfilter.fcl</fcl>
+      <bookdir>&data_dir;</bookdir>
+      <workdir>&resilient_dir;&name;</workdir>
+      <outdir>&scratch_dir;</outdir>
+      <logdir>&scratch_dir;</logdir>
+      <numjobs>1000</numjobs>
+      <numevents>1000</numevents>
+      <maxfilesperjob>10</maxfilesperjob>
+      <memory>8000</memory>
+      <datatier>stopmufilter</datatier>
+      <schema>root</schema>
+    </stage>
+                                                          
+  </project>
+
+</job>
