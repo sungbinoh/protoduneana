@@ -16,7 +16,8 @@
 #include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
-#include "art/Framework/Services/Optional/TFileService.h"
+#include "art_root_io/TFileService.h"
+#include "art_root_io/TFileDirectory.h"
 #include "cetlib/search_path.h"
 
 // larsoft
@@ -37,9 +38,9 @@
 #include <memory>
 
 // local
-#include "dune/Protodune/singlephase/StopMuFilter/algorithms/SelectionCuts.h"
-#include "dune/Protodune/singlephase/TensionAnalysis/algorithms/HelperFunctions.h"
-#include "dune/Protodune/singlephase/TensionAnalysis/algorithms/Structs.h"
+#include "protoduneana/singlephase/stoppingmuonfilter/algorithms/SelectionCuts.h"
+#include "protoduneana/singlephase/tensionanalysis/algorithms/HelperFunctions.h"
+#include "protoduneana/singlephase/tensionanalysis/algorithms/Structs.h"
 
 namespace pdsp {
   class TensionAnalysis;
@@ -1003,17 +1004,17 @@ pdsp::TensionInformation pdsp::TensionAnalysis::getTensionInformation(art::Ptr< 
         << "-- printing information from geometry";
 
       // define variables for the loop
-      double distBetweenSegmentsY = 99999;
-      double closestWireGeomStartY;
-      double closestWireGeomEndY;
-      double closestWireGeomStartZ;
-      double closestWireGeomLength;
-      double closestWireGeomEndZ;
-      double segmentStartYSegment;
-      double segmentStartZSegment;
-      double segmentEndYSegment;
-      double segmentEndZSegment;
-      double segmentLength;
+      double distBetweenSegmentsY  = 99999;
+      double closestWireGeomStartY = -1;
+      double closestWireGeomEndY   = -1;
+      double closestWireGeomStartZ = -1;
+      double closestWireGeomLength = -1;
+      double closestWireGeomEndZ   = -1;
+      double segmentStartYSegment  = -1;
+      double segmentStartZSegment  = -1;
+      double segmentEndYSegment    = -1;
+      double segmentEndZSegment    = -1;
+      double segmentLength         = -1;
 
       // loop wire IDs and find the correct one
 
@@ -1043,11 +1044,11 @@ pdsp::TensionInformation pdsp::TensionAnalysis::getTensionInformation(art::Ptr< 
           << ", "            << thisWireGeoEndY
           << ", "            << thisWireGeoEndZ;
 
-        double newDistY;
-        float rotatedGeomStartY;
-        float rotatedGeomEndY;
-        float rotatedGeomStartZ;
-        float rotatedGeomEndZ;
+        double newDistY         = -1;
+        float rotatedGeomStartY = -1;
+        float rotatedGeomEndY   = -1;
+        float rotatedGeomStartZ = -1;
+        float rotatedGeomEndZ   = -1;
 
         // different rotations for U vs V
         if (thisHit->View() == 1){
