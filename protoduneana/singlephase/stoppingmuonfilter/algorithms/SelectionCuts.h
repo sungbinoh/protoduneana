@@ -17,7 +17,7 @@
 #include <iostream>
 
 // local
-#include "dune/Protodune/singlephase/StopMuFilter/algorithms/Structs.h"
+#include "protoduneana/singlephase/stoppingmuonfilter/algorithms/Structs.h"
 
 namespace util{
 

@@ -27,7 +27,8 @@
 #include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
-#include "art/Framework/Services/Optional/TFileService.h"
+#include "art_root_io/TFileService.h"
+#include "art_root_io/TFileDirectory.h"
 #include "art/Persistency/Common/PtrMaker.h"
 
 // larsoft
@@ -49,10 +50,10 @@
 #include <memory>
 
 // local
-#include "dune/Protodune/singlephase/StopMuFilter/algorithms/FiducialVolume.h"
-#include "dune/Protodune/singlephase/StopMuFilter/algorithms/GeometryHelper.h"
-#include "dune/Protodune/singlephase/StopMuFilter/algorithms/SelectionCuts.h"
-#include "dune/Protodune/singlephase/StopMuFilter/algorithms/Structs.h"
+#include "protoduneana/singlephase/stoppingmuonfilter/algorithms/FiducialVolume.h"
+#include "protoduneana/singlephase/stoppingmuonfilter/algorithms/GeometryHelper.h"
+#include "protoduneana/singlephase/stoppingmuonfilter/algorithms/SelectionCuts.h"
+#include "protoduneana/singlephase/stoppingmuonfilter/algorithms/Structs.h"
 
 namespace pdsp {
   class StoppingMuFilter;
