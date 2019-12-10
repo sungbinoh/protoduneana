@@ -600,8 +600,6 @@ void pionana::PionAnalyzerMC::analyze(art::Event const& evt)
   auto recoShowers = evt.getValidHandle< std::vector< recob::Shower > >(fShowerTag);
   art::FindManyP<recob::Hit> findHitsFromShowers(recoShowers,evt,fShowerTag);
 
-  auto allPFPs = evt.getValidHandle< std::vector< recob::PFParticle > >( fPFParticleTag );
-
   std::map< int, std::vector< int > > trueToPFPs = truthUtil.GetMapMCToPFPs_ByHits( evt, fPFParticleTag, fHitTag );
   
 

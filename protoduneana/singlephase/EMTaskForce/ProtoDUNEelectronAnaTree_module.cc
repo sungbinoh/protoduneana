@@ -203,7 +203,6 @@ private:
   double fprimaryShower_hit_q[MAXHits];
   double fprimaryShower_hit_t[MAXHits]; 
   double fprimaryShower_hit_X[MAXHits];
-  int    fnumberof_wire; //collection
 
   int    fprimaryNewShower_nHits; //collection only
   int    fprimaryNewShower_hit_w[MAXHits];
@@ -978,4 +977,3 @@ void protoana::ProtoDUNEelectronAnaTree::Initialise(){
 }
 
 DEFINE_ART_MODULE(protoana::ProtoDUNEelectronAnaTree)
-
