@@ -659,7 +659,7 @@ void pdsp::TensionAnalysis::beginJob()
   // read in ROOT trees containing wire information
   std::string tensionPath;
   cet::search_path sp("FW_SEARCH_PATH");
-  if(!sp.find_file("TensionAnalysis/data/tension_measurements.root", tensionPath)){
+  if(!sp.find_file("tensionanalysis/data/tension_measurements.root", tensionPath)){
     throw cet::exception("FileError")
       << "Cannot find tension_measurements.root file "
       << " bail ungracefully\n\n"

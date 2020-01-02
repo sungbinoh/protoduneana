@@ -25,6 +25,7 @@ fwdir  product_dir config_data
 # table fragment to set FW_SEARCH_PATH needed
 # to find gdml files:
 table_fragment_begin
+    pathPrepend(FW_SEARCH_PATH, ${PROTODUNEANA_DIR}/data)
 #    pathPrepend(FW_SEARCH_PATH, ${PROTODUNEANA_DIR}/scripts)
 #    pathPrepend(FW_SEARCH_PATH, ${PROTODUNEANA_DIR}/gdml)
 #    pathPrepend(FW_SEARCH_PATH, ${DUNE_PARDATA_DIR}/FieldResponse)
