@@ -2,9 +2,9 @@
 
 <!-- project details -->
 <!DOCTYPE project [
-<!ENTITY release "v08_15_00">
+<!ENTITY release "v08_35_00">
 <!ENTITY exp "dune">
-<!ENTITY name "stopmu_data_withfembfilter_first_half">
+<!ENTITY name "stoppingmuonfilter_pdsp_data">
 <!ENTITY scratch_dir "/pnfs/&exp;/scratch/users/alister1/&name;">
 <!ENTITY resilient_dir "/pnfs/&exp;/resilient/users/alister1/">
 <!ENTITY data_dir "/pnfs/&exp;/scratch/users/alister1/&name;_datadir">
@@ -25,19 +25,19 @@
     <!-- larsoft info -->
     <larsoft>
       <tag>&release;</tag>
-      <qual>e15:prof</qual>
-      <local>/pnfs/dune/resilient/users/alister1/dunetpc_v08_15_00.tar</local>
+      <qual>e17:prof</qual>
+      <local>/pnfs/dune/resilient/users/alister1/dunetpc_v08_35_00.tar</local>
     </larsoft>
 
     <!-- filter -->
     <stage name="filter">
-      <inputdef>alister1_np04_full-reconstructed_v07_08_00_unified_physics_10klimit</inputdef>
+      <inputdef>alister1_protodune-sp_allruns_reco_v08_27_XX_v0_10klimit</inputdef>
       <fcl>run_stopping_mu_filter_withallfembfilter.fcl</fcl>
       <bookdir>&data_dir;</bookdir>
       <workdir>&resilient_dir;&name;</workdir>
       <outdir>&scratch_dir;</outdir>
       <logdir>&scratch_dir;</logdir>
-      <numjobs>1000</numjobs>
+      <numjobs>10</numjobs>
       <numevents>1000</numevents>
       <maxfilesperjob>10</maxfilesperjob>
       <memory>8000</memory>

@@ -45,6 +45,7 @@ art_make( LIBRARY_NAME ProtoDUNEUtilities
                         ${ROOT_BASIC_LIB_LIST}
 	  MODULE_LIBRARIES
 	  ProtoDUNEUtilities
+    ProtoDUNEDataUtils
 )
 
 install_headers()
