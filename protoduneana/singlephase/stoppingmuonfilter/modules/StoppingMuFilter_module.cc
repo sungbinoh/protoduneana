@@ -521,7 +521,7 @@ void pdsp::StoppingMuFilter::beginJob()
   anaTree->Branch("trackResRangeByHitPlane1" , "std::vector< std::vector< float > >"  , &trackResRangeByHitPlane1);
 }
 
-void clearVectors(){
+void pdsp::StoppingMuFilter::clearVectors(){
   trackStartX              ->resize(0);
   trackStartY              ->resize(0);
   trackStartZ              ->resize(0);
