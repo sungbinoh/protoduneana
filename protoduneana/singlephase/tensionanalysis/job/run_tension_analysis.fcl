@@ -8,8 +8,10 @@ process_name: tensionana
 services:
 {
   TFileService: {fileName: "tensionana.root"}
-  @table::protodune_services
-  message: @local::standard_info
+  message:               @local::standard_info
+  PdspChannelMapService: @local::pdspchannelmap
+                         @table::protodune_services
+
 } # services
 
 source:
@@ -26,7 +28,7 @@ physics:
     {
       module_type: "TensionAnalysis"
       ProducerLabels: @local::tensionsanaproducerlabels
-      CutValues: @local::tensionsanacutvalues
+      CutValues:      @local::tensionsanacutvalues
     }
   } # analyzers
 
