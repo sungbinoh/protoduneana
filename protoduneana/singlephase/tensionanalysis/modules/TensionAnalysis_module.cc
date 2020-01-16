@@ -30,6 +30,8 @@
 #include "lardata/Utilities/AssociationUtil.h"
 #include "larcore/Geometry/Geometry.h"
 
+#include "dune-raw-data/Services/ChannelMap/PdspChannelMapService.h"
+
 // root
 #include "TFile.h"
 #include "TTree.h"
@@ -65,38 +67,33 @@ class pdsp::TensionAnalysis : public art::EDAnalyzer {
     // Selected optional functions.
     void beginJob() override;
 
-    // used to resize vectors which go into the root tree back to zero.
-    // called once per event
+    /// used to resize vectors which go into the root tree back to zero.
+    /// called once per event
     void resizeVectors();
 
-    // given an analysis APA number, return a struct containing the 
-    // build APA number along with the side which faces the cathode
-    // and therefore should be used for analysis
+    /// given an analysis APA number, return a struct containing the 
+    /// build APA number along with the side which faces the cathode
+    /// and therefore should be used for analysis
     pdsp::APAAndSide getAPAInfoFromAnaAPANumber(int anaAPANumber);
 
-    // given a build APA number, return a struct containing the 
-    // analysis APA number along with the side which faces the cathode
-    // and therefore should be used for analysis
-    pdsp::APAAndSide getAPAInfoFromBuildAPANumber(int buildAPANumber);
-
-    // takes a reconstructed spacepoint associated to a hit on a given channel, and 
-    // finds the closest wire segment associated with that DAQ channel number
-    // then return a the distance to that segment and the tension associated with that 
-    // segment
+    /// takes a reconstructed spacepoint associated to a hit on a given channel, and 
+    /// finds the closest wire segment associated with that DAQ channel number
+    /// then return a the distance to that segment and the tension associated with that 
+    /// segment
     pdsp::TensionInformation getTensionInformation(art::Ptr< recob::Hit > thisHit, art::Ptr< recob::SpacePoint > thisSpacePoint, TTree* t, pdsp::APASide sideToUse);
 
-    // takes a reconstructes spacepoint associated to a hit on a given channel,
-    // and finds the calorimetry information which is located neares to the
-    // space point
-    pdsp::CalorimetryInformation getCalorimetryInformation(art::Ptr< recob::SpacePoint > thisSpacePoint, std::vector< art::Ptr<anab::Calorimetry> > calVec);
+    /// takes a reconstructed spacepoint associated to a hit on a given channel,
+    /// and finds the calorimetry information which is located nearest to the
+    /// space point
+    pdsp::CalorimetryInformation getCalorimetryInformation(art::Ptr< recob::SpacePoint > thisSpacePoint, std::vector< art::Ptr<anab::Calorimetry> > calVec, int plane);
 
   private:
 
     // services
     art::ServiceHandle< art::TFileService > tfs;
+    art::ServiceHandle< dune::PdspChannelMapService > channelMap;
 
     // Declare member data here.
-    TTree* anaTree;
     ::util::SelectionCuts _selCuts;
     ::util::HelperFunctions _helperFuncs;
     geo::GeometryCore const* geom = lar::providerFrom<geo::Geometry>();
@@ -119,72 +116,80 @@ class pdsp::TensionAnalysis : public art::EDAnalyzer {
     int   fWireOffsetV;
 
     // variables for tree
-    int run;
-    int subRun;
-    int event;
-    int isData;
+    TTree* anaTree; ///< analysis tree
+    int run;        ///< run number
+    int subRun;     ///< subrun number
+    int event;      ///< event number
+    int isData;     ///< is data or simulation?
 
-    std::vector<double>* trackStartX                              = nullptr;
-    std::vector<double>* trackStartY                              = nullptr;
-    std::vector<double>* trackStartZ                              = nullptr;
-    std::vector<double>* trackEndX                                = nullptr;
-    std::vector<double>* trackEndY                                = nullptr;
-    std::vector<double>* trackEndZ                                = nullptr;
-    std::vector<double>* trackLength                              = nullptr;
-    std::vector<double>* trackTheta                               = nullptr;
-    std::vector<double>* trackPhi                                 = nullptr;
-    std::vector<double>* trackAzimuthal                           = nullptr;
-    std::vector<double>* trackZenith                              = nullptr;
-    std::vector<double>* trackThetaXZ                             = nullptr;
-    std::vector<double>* trackThetaYZ                             = nullptr;
-    std::vector<double>* trackT0                                  = nullptr;
-    std::vector< std::vector<float> >* trackHitRMS                = nullptr;
-    std::vector< std::vector<float> >* trackHitPeakTime           = nullptr;
-    std::vector< std::vector<float> >* trackHitPeakAmplitude      = nullptr;
-    std::vector< std::vector<float> >* trackHitIntegral           = nullptr;
-    std::vector< std::vector<int> >*   trackHitChannel            = nullptr;
-    std::vector< std::vector<int> >*   trackHitView               = nullptr;
-    std::vector< std::vector<float> >* trackHitDistanceToTrackEnd = nullptr;
-    std::vector< std::vector<int> >*   trackHitAPAAnalysisNumber  = nullptr;
-    std::vector< std::vector<int> >*   trackHitAPABuildNumber     = nullptr;
-    std::vector< std::vector<int> >*   trackHitWireNo             = nullptr;
-    std::vector< std::vector<float> >* trackHitWireLength         = nullptr;
-    std::vector< std::vector<float> >* trackHitSegmentDistance    = nullptr;
-    std::vector< std::vector<float> >* trackHitWireTension        = nullptr;
-    std::vector< std::vector<float> >* trackHitWireSegmentYStart  = nullptr;
-    std::vector< std::vector<float> >* trackHitWireSegmentYEnd    = nullptr;
-    std::vector< std::vector<float> >* trackHitWireSegmentZStart  = nullptr;
-    std::vector< std::vector<float> >* trackHitWireSegmentZEnd    = nullptr;
-    std::vector< std::vector<float> >* trackHitWireSegmentLength  = nullptr;
-    std::vector< std::vector<float> >* trackHitWireGeomYStart     = nullptr;
-    std::vector< std::vector<float> >* trackHitWireGeomYEnd       = nullptr;
-    std::vector< std::vector<float> >* trackHitWireGeomZStart     = nullptr;
-    std::vector< std::vector<float> >* trackHitWireGeomZEnd       = nullptr;
-    std::vector< std::vector<float> >* trackHitWireGeomLength     = nullptr;
-    std::vector< std::vector<float> >* trackHitSPCaloDist         = nullptr;
-    std::vector< std::vector<float> >* trackHitCaloEnergyDep      = nullptr;
-    std::vector< std::vector<float> >* trackHitCaloChargeDep      = nullptr;
-    std::vector< std::vector<float> >* trackHitCaloResidualRange  = nullptr;
-    std::vector<float>* allHitRMS                                 = nullptr;
-    std::vector<float>* allHitPeakTime                            = nullptr;
-    std::vector<float>* allHitPeakAmplitude                       = nullptr;
-    std::vector<float>* allHitIntegral                            = nullptr;
-    std::vector<int>* allHitChannel                               = nullptr;
-    std::vector<int>* allHitView                                  = nullptr;
-
-    // histograms to save
-    TTree* geometryTree;
-    int channelNumber;
-    int channelNumberAssociatedWires;
-    std::vector<int> channelAssociatedWiresPlane;
-    std::vector<int> channelAssociatedAPABuildNumber;
-    std::vector<double> channelAssociatedWiresLength;
-    std::vector<double> channelAssociatedWiresStartX;
-    std::vector<double> channelAssociatedWiresEndX;
-    std::vector<double> channelAssociatedWiresStartY;
-    std::vector<double> channelAssociatedWiresEndY;
-    std::vector<double> channelAssociatedWiresStartZ;
-    std::vector<double> channelAssociatedWiresEndZ;
+    std::vector<double>* trackStartX                              = nullptr; ///< track start x position (cm) 
+    std::vector<double>* trackStartY                              = nullptr; ///< track start y position (cm)
+    std::vector<double>* trackStartZ                              = nullptr; ///< track start z position (cm)
+    std::vector<double>* trackEndX                                = nullptr; ///< track end x position (cm)
+    std::vector<double>* trackEndY                                = nullptr; ///< track end y position (cm)
+    std::vector<double>* trackEndZ                                = nullptr; ///< track end z position (cm)
+    std::vector<double>* trackLength                              = nullptr; ///< track length position (cm)
+    std::vector<double>* trackTheta                               = nullptr; ///< track theta (rad)
+    std::vector<double>* trackPhi                                 = nullptr; ///< track phi (rad)
+    std::vector<double>* trackAzimuthal                           = nullptr; ///< track azimuthal angle (rad)
+    std::vector<double>* trackZenith                              = nullptr; ///< track zenith angle (rad)
+    std::vector<double>* trackThetaXZ                             = nullptr; ///< track theta_xz angle
+    std::vector<double>* trackThetaYZ                             = nullptr; ///< track theta_yz angle
+    std::vector<double>* trackT0                                  = nullptr; ///< track reconstructed t_0
+    std::vector< std::vector<float> >* trackHitRMS                = nullptr; ///< track-associated hit rms
+    std::vector< std::vector<float> >* trackHitPeakTime           = nullptr; ///< track-associated hit peak times
+    std::vector< std::vector<float> >* trackHitPeakAmplitude      = nullptr; ///< track-associated hit peak amplitudes
+    std::vector< std::vector<float> >* trackHitIntegral           = nullptr; ///< track-associated hit integrals
+    std::vector< std::vector<int> >*   trackHitChannel            = nullptr; ///< track-associated hit channels
+    std::vector< std::vector<int> >*   trackHitView               = nullptr; ///< track-associated hit views
+    std::vector< std::vector<float> >* trackHitDistanceToTrackEnd = nullptr; ///< track-associated hit straight line
+                                                                             ///< distance to track end
+    std::vector< std::vector<int> >*   trackHitAPAAnalysisNumber  = nullptr; ///< track-associated hit APA analysis number
+    std::vector< std::vector<int> >*   trackHitAPABuildNumber     = nullptr; ///< track-associated hit APA build number
+    std::vector< std::vector<int> >*   trackHitWireNo             = nullptr; ///< track-associated hit wire number
+    std::vector< std::vector<float> >* trackHitWireLength         = nullptr; ///< track-associated hit wire length
+    std::vector< std::vector<float> >* trackHitSegmentDistance    = nullptr; ///< track-associated hit distance to closest wire segment
+    std::vector< std::vector<float> >* trackHitWireTension        = nullptr; ///< track-associated hit wire tension
+    std::vector< std::vector<float> >* trackHitWireSegmentYStart  = nullptr; ///< track-associated hit wire start y (from spreadsheet, mm)
+    std::vector< std::vector<float> >* trackHitWireSegmentYEnd    = nullptr; ///< track-associated hit wire end y (from spreadsheet, mm)
+    std::vector< std::vector<float> >* trackHitWireSegmentZStart  = nullptr; ///< track-associated hit wire start z (from spreadsheet, mm)
+    std::vector< std::vector<float> >* trackHitWireSegmentZEnd    = nullptr; ///< track-associated hit wire end z (from spreadsheet, mm)
+    std::vector< std::vector<float> >* trackHitWireSegmentLength  = nullptr; ///< track-associated hit wire length (mm)
+    std::vector< std::vector<float> >* trackHitWireGeomYStart     = nullptr; ///< track-associated hit wire start y (from geometry)
+    std::vector< std::vector<float> >* trackHitWireGeomYEnd       = nullptr; ///< track-associated hit wire end y (from geometry)
+    std::vector< std::vector<float> >* trackHitWireGeomZStart     = nullptr; ///< track-associated hit wire start z (from geometry)
+    std::vector< std::vector<float> >* trackHitWireGeomZEnd       = nullptr; ///< track-associated hit wire end z (from geometry)
+    std::vector< std::vector<float> >* trackHitWireGeomLength     = nullptr; ///< track-associated hit wire length (from geometry)
+    std::vector< std::vector<float> >* trackHitSPCaloDist         = nullptr; ///< track-associated hit spacepoint-to-calorimetry distance
+    std::vector< std::vector<float> >* trackHitCaloEnergyDep      = nullptr; ///< track-associated hit calorimetry energy
+    std::vector< std::vector<float> >* trackHitCaloChargeDep      = nullptr; ///< track-associated hit calorimetry charge
+    std::vector< std::vector<float> >* trackHitCaloResidualRange  = nullptr; ///< track-associated hit calorimetry residual range
+    std::vector<float>* allHitRMS                                 = nullptr; ///< all hits, RMS
+    std::vector<float>* allHitPeakTime                            = nullptr; ///< all hits, peak time
+    std::vector<float>* allHitPeakAmplitude                       = nullptr; ///< all hits, peak amplitude
+    std::vector<float>* allHitIntegral                            = nullptr; ///< all hits, integral
+    std::vector<int>* allHitChannel                               = nullptr; ///< all hits, channel number
+    std::vector<int>* allHitView                                  = nullptr; ///< all hits, view
+    
+    // geometry tree information
+    TTree* geometryTree;                                ///< tree which stores geometry information
+    int channelNumber;                                  ///< channel number
+    int channelNumberAssociatedFEMB;                    ///< channel number associated FEMB number (1-4)
+    int channelNumberAssociatedWIB;                     ///< channel number associated Warm Intefcae Board
+    int channelNumberAssociatedFEMBIndex;               ///< FEMB index calculation is taken from DataUtils, 
+                                                        ///< from the dunetpc repo, uses above 2 variabales in 
+                                                        ///< calculation
+    int channelNumberAssociatedFEMBChannel;             ///< channel on the FEMB
+    int channelNumberAssociatedWires;                   ///< number of wires associated with the channel
+    int channelAssociatedWiresPlane;                    ///< wire plane associated with this channel
+    int channelAssociatedAPABuildNumber;                ///< APA build number associated with this channel
+    std::vector<double> channelAssociatedWiresLength;   ///< length of wires associated with channel
+    std::vector<double> channelAssociatedWiresStartX;   ///< start x position (drift direction) of wires
+    std::vector<double> channelAssociatedWiresEndX;     ///< end x position (drift direction) of wires
+    std::vector<double> channelAssociatedWiresStartY;   ///< start y position (vertical) of wires
+    std::vector<double> channelAssociatedWiresEndY;     ///< end y position (vertical) of wires
+    std::vector<double> channelAssociatedWiresStartZ;   ///< start z position (beam direction) of wires
+    std::vector<double> channelAssociatedWiresEndZ;     ///< end z position (beam direction) of wires
 
     // root files to read in
     TFile* tensionsFile;
@@ -361,6 +366,16 @@ void pdsp::TensionAnalysis::analyze(art::Event const& e)
       // get hits associated to this track
       std::vector<art::Ptr< recob::Hit > > theseHits = hitsFromTracks.at(thisTrack.key());
 
+      // each event is contained within one row of the ttree, so we want to have the
+      // following structure
+      // - event
+      // -- track information
+      // --- hit information
+      //
+      // so we need to hold the hits in a vector< vector< var > >.
+      //
+      // these variables are the temporary vectors for each track which we push back into a 
+      // the track-level vectors
       std::vector<float> tHitRMS;
       std::vector<float> tHitPeakTime;
       std::vector<float> tHitPeakAmplitude;
@@ -395,11 +410,30 @@ void pdsp::TensionAnalysis::analyze(art::Event const& e)
       for (size_t iHit = 0; iHit < theseHits.size(); iHit++){
         art::Ptr< recob::Hit > thisHit = theseHits.at(iHit);
 
-        if (spacePointFromHits.at(thisHit.key()).size() == 0){
-          MF_LOG_DEBUG("pdsp::TensionAnalysis::analyze") 
-            << "-- -- no associated spacepoints, skipping hit.";
-          continue;
+        // get spacepoints, as they have a reconstructed 3d position which can be compared
+        // against the 3d positions in the calorimetry object, and the end of the reconstructed
+        // track
+        int nAsscSpacePoints = spacePointFromHits.at(thisHit.key()).size();
+        if (nAsscSpacePoints != 1){
+         
+          if (nAsscSpacePoints == 0){
+            MF_LOG_DEBUG("pdsp::TensionAnalysis::analyze") 
+              << "-- -- no associated spacepoints, skipping hit.";
+            continue;
+          }
+          else {
+            MF_LOG_VERBATIM("pdsp::TensionAnalysis::analyze")
+              << "-- -- there are " 
+              << nAsscSpacePoints 
+              << "spacepoints assoicated with this hit."
+              << "\nThat's not right. Dumping information and quiting."
+              << "\n-- Event         : " << run << "/" << subRun << "/" << event
+              << "\n-- Track with ID : " << thisTrack->ID()
+              << "\n-- Hit key       : " << thisHit.key();
+          }
+
         }
+
         art::Ptr< recob::SpacePoint > thisSpacePoint = spacePointFromHits.at(thisHit.key()).at(0);
 
         double distanceToTrackEnd = 
@@ -514,7 +548,7 @@ void pdsp::TensionAnalysis::analyze(art::Event const& e)
           tHitWireSegmentLength .push_back(thisTensionInformation.wireSegmentLength  );
 
           // get calorimetry information for this spacepoint
-          pdsp::CalorimetryInformation thisCalorimetryInfo = this->getCalorimetryInformation(thisSpacePoint, caloPtrVector);
+          pdsp::CalorimetryInformation thisCalorimetryInfo = this->getCalorimetryInformation(thisSpacePoint, caloPtrVector, thisHit->View());
           tHitSPCaloDist       .push_back(thisCalorimetryInfo.distanceFromSPToCalo);
           tHitCaloEnergyDep    .push_back(thisCalorimetryInfo.energyDeposition);
           tHitCaloChargeDep    .push_back(thisCalorimetryInfo.chargeDeposition);
@@ -643,18 +677,22 @@ void pdsp::TensionAnalysis::beginJob()
   anaTree->Branch("allHitChannel"             , "std::vector<int>"                  , &allHitChannel);
   anaTree->Branch("allHitView"                , "std::vector<int>"                  , &allHitView);
 
-  geometryTree = tfs->make<TTree>("geometry_tree"        , "geometry tree");
-  geometryTree->Branch("channelNumber"                   , &channelNumber);
-  geometryTree->Branch("channelNumberAssociatedWires"    , &channelNumberAssociatedWires);
-  geometryTree->Branch("channelAssociatedWiresPlane"     , &channelAssociatedWiresPlane);
-  geometryTree->Branch("channelAssociatedAPABuildNumber" , &channelAssociatedAPABuildNumber);
-  geometryTree->Branch("channelAssociatedWiresLength"    , "std::vector<double>"              , &channelAssociatedWiresLength);
-  geometryTree->Branch("channelAssociatedWiresStartX"    , "std::vector<double>"              , &channelAssociatedWiresStartX);
-  geometryTree->Branch("channelAssociatedWiresEndX"      , "std::vector<double>"              , &channelAssociatedWiresEndX);
-  geometryTree->Branch("channelAssociatedWiresStartY"    , "std::vector<double>"              , &channelAssociatedWiresStartY);
-  geometryTree->Branch("channelAssociatedWiresEndY"      , "std::vector<double>"              , &channelAssociatedWiresEndY);
-  geometryTree->Branch("channelAssociatedWiresStartZ"    , "std::vector<double>"              , &channelAssociatedWiresStartZ);
-  geometryTree->Branch("channelAssociatedWiresEndZ"      , "std::vector<double>"              , &channelAssociatedWiresEndZ);
+  geometryTree = tfs->make<TTree>("geometry_tree"           , "geometry tree");
+  geometryTree->Branch("channelNumber"                      , &channelNumber);
+  geometryTree->Branch("channelNumberAssociatedFEMB"        , &channelNumberAssociatedFEMB);
+  geometryTree->Branch("channelNumberAssociatedWIB"         , &channelNumberAssociatedWIB);
+  geometryTree->Branch("channelNumberAssociatedFEMBIndex"   , &channelNumberAssociatedFEMBIndex);
+  geometryTree->Branch("channelNumberAssociatedFEMBChannel" , &channelNumberAssociatedFEMBChannel);
+  geometryTree->Branch("channelNumberAssociatedWires"       , &channelNumberAssociatedWires);
+  geometryTree->Branch("channelAssociatedWiresPlane"        , &channelAssociatedWiresPlane);
+  geometryTree->Branch("channelAssociatedAPABuildNumber"    , &channelAssociatedAPABuildNumber);
+  geometryTree->Branch("channelAssociatedWiresLength"       , "std::vector<double>"                 , &channelAssociatedWiresLength);
+  geometryTree->Branch("channelAssociatedWiresStartX"       , "std::vector<double>"                 , &channelAssociatedWiresStartX);
+  geometryTree->Branch("channelAssociatedWiresEndX"         , "std::vector<double>"                 , &channelAssociatedWiresEndX);
+  geometryTree->Branch("channelAssociatedWiresStartY"       , "std::vector<double>"                 , &channelAssociatedWiresStartY);
+  geometryTree->Branch("channelAssociatedWiresEndY"         , "std::vector<double>"                 , &channelAssociatedWiresEndY);
+  geometryTree->Branch("channelAssociatedWiresStartZ"       , "std::vector<double>"                 , &channelAssociatedWiresStartZ);
+  geometryTree->Branch("channelAssociatedWiresEndZ"         , "std::vector<double>"                 , &channelAssociatedWiresEndZ);
 
   // read in ROOT trees containing wire information
   std::string tensionPath;
@@ -689,8 +727,6 @@ void pdsp::TensionAnalysis::beginJob()
   // loop all channels and get the number of assoicated wires, along with their lengths
   for (int i_chan = 0; i_chan < 15360; i_chan++){
     channelAssociatedWiresLength.resize(0);
-    channelAssociatedAPABuildNumber.resize(0);
-    channelAssociatedWiresPlane.resize(0);
     channelAssociatedWiresStartX.resize(0);
     channelAssociatedWiresStartY.resize(0);
     channelAssociatedWiresStartZ.resize(0);
@@ -699,26 +735,28 @@ void pdsp::TensionAnalysis::beginJob()
     channelAssociatedWiresEndZ.resize(0);
     std::vector<geo::WireID> wireIDs = geom->ChannelToWire(i_chan);
 
-    channelNumber = i_chan;
-    channelNumberAssociatedWires = (int)wireIDs.size();
+    channelNumber                      = i_chan;
+    channelNumberAssociatedWires       = (int)wireIDs.size();
+    channelNumberAssociatedFEMB        = (int)channelMap->FEMBFromOfflineChannel(channelNumber);
+    channelNumberAssociatedWIB         = (int)channelMap->WIBFromOfflineChannel(channelNumber); 
+    channelNumberAssociatedFEMBIndex   = ((channelNumberAssociatedWIB*4)+(channelNumberAssociatedFEMB-1));
+    channelNumberAssociatedFEMBChannel = (int)channelMap->FEMBChannelFromOfflineChannel(channelNumber);
+    channelAssociatedWiresPlane        = wireIDs.at(0).Plane;
+    
+    // get TPC ID information
+    pdsp::APAAndSide thisAPAAndSide = this->getAPAInfoFromAnaAPANumber(wireIDs.at(0).TPC);
+    channelAssociatedAPABuildNumber = thisAPAAndSide.APABuildNumber;
 
     for (size_t i_wire = 0; i_wire < wireIDs.size(); i_wire++){
       geo::WireID thisWireID = wireIDs.at(i_wire);
       geo::WireGeo const& thisWireGeo = geom->Wire(thisWireID);
       channelAssociatedWiresLength.push_back(thisWireGeo.Length());
-      channelAssociatedWiresPlane.push_back(thisWireID.Plane);
       channelAssociatedWiresStartX.push_back(thisWireGeo.GetStart()[0]);
       channelAssociatedWiresEndX.push_back(thisWireGeo.GetEnd()[0]);
       channelAssociatedWiresStartY.push_back(thisWireGeo.GetStart()[1]);
       channelAssociatedWiresEndY.push_back(thisWireGeo.GetEnd()[1]);
       channelAssociatedWiresStartZ.push_back(thisWireGeo.GetStart()[2]);
       channelAssociatedWiresEndZ.push_back(thisWireGeo.GetEnd()[2]);
-
-
-      // get TPC ID information
-      pdsp::APAAndSide thisAPAAndSide = this->getAPAInfoFromAnaAPANumber(thisWireID.TPC);
-      channelAssociatedAPABuildNumber.push_back(thisAPAAndSide.APABuildNumber);
-
     }
 
     geometryTree->Fill();
@@ -789,93 +827,42 @@ void pdsp::TensionAnalysis::resizeVectors()
 
 }
 
-pdsp::APAAndSide pdsp::TensionAnalysis::getAPAInfoFromBuildAPANumber(int buildAPANumber)
-{
-
-  pdsp::APAAndSide thisAPAAndSide;
-
-  if (buildAPANumber == 1){
-    thisAPAAndSide.APABuildNumber         =  1;
-    thisAPAAndSide.APAInstallationNumber  =  1;
-    thisAPAAndSide.APAAnalysisNumber      =  9;
-    thisAPAAndSide.sideToUse              =  pdsp::kB;
-  }
-  else if (buildAPANumber == 2){
-    thisAPAAndSide.APABuildNumber         =  2;
-    thisAPAAndSide.APAInstallationNumber  =  2;
-    thisAPAAndSide.APAAnalysisNumber      =  5;
-    thisAPAAndSide.sideToUse              =  pdsp::kB;
-  }
-  else if (buildAPANumber == 3){
-    thisAPAAndSide.APABuildNumber         =  3;
-    thisAPAAndSide.APAInstallationNumber  =  4;
-    thisAPAAndSide.APAAnalysisNumber      =  10;
-    thisAPAAndSide.sideToUse              =  pdsp::kA;
-  }
-  else if (buildAPANumber == 4){
-    thisAPAAndSide.APABuildNumber         =  4;
-    thisAPAAndSide.APAInstallationNumber  =  6;
-    thisAPAAndSide.APAAnalysisNumber      =  6;
-    thisAPAAndSide.sideToUse              =  pdsp::kA;
-  }
-  else if (buildAPANumber == 5){
-    thisAPAAndSide.APABuildNumber         =  5;
-    thisAPAAndSide.APAInstallationNumber  =  3;
-    thisAPAAndSide.APAAnalysisNumber      =  1;
-    thisAPAAndSide.sideToUse              =  pdsp::kB;
-  }
-  else if (buildAPANumber == 6){
-    thisAPAAndSide.APABuildNumber         =  6;
-    thisAPAAndSide.APAInstallationNumber  =  5;
-    thisAPAAndSide.APAAnalysisNumber      =  2;
-    thisAPAAndSide.sideToUse              =  pdsp::kA;
-  }
-  else {
-    thisAPAAndSide.APABuildNumber         =  -1;
-    thisAPAAndSide.APAInstallationNumber  =  -1;
-    thisAPAAndSide.APAAnalysisNumber      =  -1;
-    thisAPAAndSide.sideToUse              =  pdsp::kUnknown;
-  }
-
-  return thisAPAAndSide;
-}
-
 pdsp::APAAndSide pdsp::TensionAnalysis::getAPAInfoFromAnaAPANumber(int anaAPANumber)
 {
 
   pdsp::APAAndSide thisAPAAndSide;
 
-  if (anaAPANumber == 1){
+  if (anaAPANumber == 1 || anaAPANumber == 0){
     thisAPAAndSide.APABuildNumber         =  5;
     thisAPAAndSide.APAInstallationNumber  =  3;
     thisAPAAndSide.APAAnalysisNumber      =  1;
     thisAPAAndSide.sideToUse              =  pdsp::kB;
   }
-  else if (anaAPANumber == 2){
+  else if (anaAPANumber == 2 || anaAPANumber == 3){
     thisAPAAndSide.APABuildNumber         =  6;
     thisAPAAndSide.APAInstallationNumber  =  5;
     thisAPAAndSide.APAAnalysisNumber      =  2;
     thisAPAAndSide.sideToUse              =  pdsp::kA;
   }
-  else if (anaAPANumber == 5){
+  else if (anaAPANumber == 5 || anaAPANumber == 4){
     thisAPAAndSide.APABuildNumber         =  2;
     thisAPAAndSide.APAInstallationNumber  =  2;
     thisAPAAndSide.APAAnalysisNumber      =  5;
     thisAPAAndSide.sideToUse              =  pdsp::kB;
   }
-  else if (anaAPANumber == 6){
+  else if (anaAPANumber == 6 || anaAPANumber == 7){
     thisAPAAndSide.APABuildNumber         =  4;
     thisAPAAndSide.APAInstallationNumber  =  6;
     thisAPAAndSide.APAAnalysisNumber      =  6;
     thisAPAAndSide.sideToUse              =  pdsp::kA;
   }
-  else if (anaAPANumber == 9){
+  else if (anaAPANumber == 9 || anaAPANumber == 8){
     thisAPAAndSide.APABuildNumber         =  1;
     thisAPAAndSide.APAInstallationNumber  =  1;
     thisAPAAndSide.APAAnalysisNumber      =  9;
     thisAPAAndSide.sideToUse              =  pdsp::kB;
   }
-  else if (anaAPANumber == 10){
+  else if (anaAPANumber == 10 || anaAPANumber == 11){
     thisAPAAndSide.APABuildNumber         =  3;
     thisAPAAndSide.APAInstallationNumber  =  4;
     thisAPAAndSide.APAInstallationNumber  =  10;
@@ -892,9 +879,7 @@ pdsp::APAAndSide pdsp::TensionAnalysis::getAPAInfoFromAnaAPANumber(int anaAPANum
 
 }
 
-pdsp::TensionInformation pdsp::TensionAnalysis::getTensionInformation(art::Ptr< recob::Hit > thisHit, art::Ptr< recob::SpacePoint > thisSpacePoint, TTree* t, pdsp::APASide sideToUse){
-
-  MF_LOG_DEBUG("pdsp::TensionAnalysis::getTensionInformation")
+pdsp::TensionInformation pdsp::TensionAnalysis::getTensionInformation(art::Ptr< recob::Hit > thisHit, art::Ptr< recob::SpacePoint > thisSpacePoint, TTree* t, pdsp::APASide sideToUse){ MF_LOG_DEBUG("pdsp::TensionAnalysis::getTensionInformation")
     << "beginning search for closest segment";
 
   pdsp::TensionInformation thisTensionInformation; 
@@ -1240,7 +1225,7 @@ pdsp::TensionInformation pdsp::TensionAnalysis::getTensionInformation(art::Ptr< 
 
 }
 
-pdsp::CalorimetryInformation pdsp::TensionAnalysis::getCalorimetryInformation(art::Ptr<recob::SpacePoint> thisSpacePoint, std::vector< art::Ptr<anab::Calorimetry> > calVec){
+pdsp::CalorimetryInformation pdsp::TensionAnalysis::getCalorimetryInformation(art::Ptr<recob::SpacePoint> thisSpacePoint, std::vector< art::Ptr<anab::Calorimetry> > calVec, int plane){
 
   pdsp::CalorimetryInformation thisCalorimetryInformation;
 
@@ -1253,14 +1238,21 @@ pdsp::CalorimetryInformation pdsp::TensionAnalysis::getCalorimetryInformation(ar
   thisCalorimetryInformation.chargeDeposition     = -1;
   thisCalorimetryInformation.residualRange        = -1;
 
+  // for ease:
+  // remember that each track has a std::vector< anab::Calorimetry > associated to it,
+  // the vector nominally has 3 entries, one for each plane.
+  //
+  // we want to loop over the three of these that we have, and 
   for (size_t i = 0; i < calVec.size(); i++){
 
     art::Ptr< anab::Calorimetry > thisCalorimetry = calVec.at(i);
 
+    std::cout << "thisCalorimetry plane: " << thisCalorimetry->PlaneID().Plane << std::endl;
+
     std::vector< anab::Point_t > calxyzVec = thisCalorimetry->XYZ();
-    std::vector< float > dedxVec = thisCalorimetry->dEdx();
-    std::vector< float > dqdxVec = thisCalorimetry->dQdx();
-    std::vector< float > resRgVec = thisCalorimetry->ResidualRange();
+    std::vector< float > dedxVec           = thisCalorimetry->dEdx();
+    std::vector< float > dqdxVec           = thisCalorimetry->dQdx();
+    std::vector< float > resRgVec          = thisCalorimetry->ResidualRange();
 
     for (size_t j = 0; j < calxyzVec.size(); j++){
 
