@@ -112,32 +112,32 @@ class pdsp::StoppingMuFilter : public art::EDFilter {
     int run;
     int subRun;
     int event;
-    std::vector<double>* trackStartX = nullptr;
-    std::vector<double>* trackStartY = nullptr;
-    std::vector<double>* trackStartZ = nullptr;
-    std::vector<double>* trackEndX = nullptr;
-    std::vector<double>* trackEndY = nullptr;
-    std::vector<double>* trackEndZ = nullptr;
-    std::vector<double>* trackLength = nullptr;
-    std::vector<double>* trackTheta = nullptr;
-    std::vector<double>* trackPhi = nullptr;
-    std::vector<double>* trackAzimuthal = nullptr;
-    std::vector<double>* trackZenith = nullptr;
-    std::vector<double>* trackThetaXZ = nullptr;
-    std::vector<double>* trackThetaYZ = nullptr;
-    std::vector<int>* trackHitMinPeakTime = nullptr;
-    std::vector< std::vector< double > >* trackMinDistLen = nullptr;
-    std::vector< std::vector< double > >* trackMinDistAngle = nullptr;
-    std::vector< std::vector< float > >* trackdEdxByHitPlane0 = nullptr;
-    std::vector< std::vector< float > >* trackdQdxByHitPlane0 = nullptr;
+    std::vector<double>* trackStartX                              = nullptr;
+    std::vector<double>* trackStartY                              = nullptr;
+    std::vector<double>* trackStartZ                              = nullptr;
+    std::vector<double>* trackEndX                                = nullptr;
+    std::vector<double>* trackEndY                                = nullptr;
+    std::vector<double>* trackEndZ                                = nullptr;
+    std::vector<double>* trackLength                              = nullptr;
+    std::vector<double>* trackTheta                               = nullptr;
+    std::vector<double>* trackPhi                                 = nullptr;
+    std::vector<double>* trackAzimuthal                           = nullptr;
+    std::vector<double>* trackZenith                              = nullptr;
+    std::vector<double>* trackThetaXZ                             = nullptr;
+    std::vector<double>* trackThetaYZ                             = nullptr;
+    std::vector<int>* trackHitMinPeakTime                         = nullptr;
+    std::vector< std::vector< double > >* trackMinDistLen         = nullptr;
+    std::vector< std::vector< double > >* trackMinDistAngle       = nullptr;
+    std::vector< std::vector< float > >* trackdEdxByHitPlane0     = nullptr;
+    std::vector< std::vector< float > >* trackdQdxByHitPlane0     = nullptr;
     std::vector< std::vector< float > >* trackResRangeByHitPlane0 = nullptr;
-    std::vector< std::vector< float > >* trackdEdxByHitPlane1 = nullptr;
-    std::vector< std::vector< float > >* trackdQdxByHitPlane1 = nullptr;
+    std::vector< std::vector< float > >* trackdEdxByHitPlane1     = nullptr;
+    std::vector< std::vector< float > >* trackdQdxByHitPlane1     = nullptr;
     std::vector< std::vector< float > >* trackResRangeByHitPlane1 = nullptr;
-    std::vector< std::vector< float > >* trackdEdxByHitPlane2 = nullptr;
-    std::vector< std::vector< float > >* trackdQdxByHitPlane2 = nullptr;
+    std::vector< std::vector< float > >* trackdEdxByHitPlane2     = nullptr;
+    std::vector< std::vector< float > >* trackdQdxByHitPlane2     = nullptr;
     std::vector< std::vector< float > >* trackResRangeByHitPlane2 = nullptr;
-
+    
     // other vairables
     ::util::GeometryHelper _geomHelper;
     ::util::FiducialVolume _fidVolOuter;
@@ -235,7 +235,13 @@ pdsp::StoppingMuFilter::StoppingMuFilter(fhicl::ParameterSet const& p)
 bool pdsp::StoppingMuFilter::filter(art::Event& e)
 {
 
+  MF_LOG_VERBATIM("pdsp::StoppingMuFilter::filter")
+    << "clearing vectors";
+
   this->clearVectors();
+
+  MF_LOG_VERBATIM("pdsp::StoppingMuFilter::filter")
+    << "vectors cleared";
 
   // get auxiliary information
   run    = e.run();
@@ -243,6 +249,9 @@ bool pdsp::StoppingMuFilter::filter(art::Event& e)
   event  = e.event();
   isData = e.isRealData();
   isPass = false;
+
+  MF_LOG_VERBATIM("pdsp::StoppingMuFilter::filter")
+    << "event: " << run << "." << subRun << "." << event;
 
   // get handles to information we're interested in
   art::Handle< std::vector< recob::PFParticle > > pfpHandle;
@@ -285,6 +294,9 @@ bool pdsp::StoppingMuFilter::filter(art::Event& e)
   art::PtrMaker<recob::Hit>        makeHitPtr(e);
   art::PtrMaker<recob::SpacePoint> makeSpacePointPtr(e);
   art::PtrMaker<anab::Calorimetry> makeCalorimetryPtr(e);
+
+  MF_LOG_VERBATIM("pdsp::StoppingMuFilter::filter")
+    << "looping PFP vector which has size " << pfpPtrVector.size();
 
   for ( size_t i = 0; i < pfpPtrVector.size(); i++){
 
@@ -519,9 +531,13 @@ void pdsp::StoppingMuFilter::beginJob()
   anaTree->Branch("trackdEdxByHitPlane1"     , "std::vector< std::vector< float > >"  , &trackdEdxByHitPlane1);
   anaTree->Branch("trackdQdxByHitPlane1"     , "std::vector< std::vector< float > >"  , &trackdQdxByHitPlane1);
   anaTree->Branch("trackResRangeByHitPlane1" , "std::vector< std::vector< float > >"  , &trackResRangeByHitPlane1);
+  anaTree->Branch("trackdEdxByHitPlane2"     , "std::vector< std::vector< float > >"  , &trackdEdxByHitPlane2);
+  anaTree->Branch("trackdQdxByHitPlane2"     , "std::vector< std::vector< float > >"  , &trackdQdxByHitPlane2);
+  anaTree->Branch("trackResRangeByHitPlane2" , "std::vector< std::vector< float > >"  , &trackResRangeByHitPlane2);
 }
 
-void pdsp::StoppingMuFilter::clearVectors(){
+void pdsp::StoppingMuFilter::clearVectors()
+{
   trackStartX              ->resize(0);
   trackStartY              ->resize(0);
   trackStartZ              ->resize(0);
@@ -535,18 +551,25 @@ void pdsp::StoppingMuFilter::clearVectors(){
   trackZenith              ->resize(0);
   trackThetaXZ             ->resize(0);
   trackThetaYZ             ->resize(0);
+  std::cout << "cleared to trackThetaYZ" << std::endl;
   trackHitMinPeakTime      ->resize(0);
   trackMinDistLen          ->resize(0);
   trackMinDistAngle        ->resize(0);
+  std::cout << "cleared to trackMinDistAngle" << std::endl;
   trackdEdxByHitPlane0     ->resize(0);
   trackdQdxByHitPlane0     ->resize(0);
   trackResRangeByHitPlane0 ->resize(0);
+  std::cout << "cleared to Plane0" << std::endl;
+
   trackdEdxByHitPlane1     ->resize(0);
   trackdQdxByHitPlane1     ->resize(0);
   trackResRangeByHitPlane1 ->resize(0);
+  std::cout << "cleared to Plane1" << std::endl;
   trackdEdxByHitPlane2     ->resize(0);
   trackdQdxByHitPlane2     ->resize(0);
   trackResRangeByHitPlane2 ->resize(0);
+  std::cout << "cleared to Plane2" << std::endl;
+
 }
 
 DEFINE_ART_MODULE(pdsp::StoppingMuFilter)
