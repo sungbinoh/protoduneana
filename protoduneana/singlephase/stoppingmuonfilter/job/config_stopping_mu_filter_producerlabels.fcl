@@ -5,7 +5,7 @@ stoppingmufilterproducerlabels:
   PFPLabel         : "pandora"
   TrackLabel       : "pandoraTrack"
   ShowerLabel      : "pandoraShower"
-  HitLabel         : "linecluster"
+  HitLabel         : "hitpdune"
   SpacePointLabel  : "pandora"
   T0Label          : "pandora"
   CalorimetryLabel : "pandoracalo"
