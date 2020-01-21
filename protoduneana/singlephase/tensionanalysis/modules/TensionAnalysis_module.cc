@@ -183,13 +183,18 @@ class pdsp::TensionAnalysis : public art::EDAnalyzer {
     int channelNumberAssociatedWires;                   ///< number of wires associated with the channel
     int channelAssociatedWiresPlane;                    ///< wire plane associated with this channel
     int channelAssociatedAPABuildNumber;                ///< APA build number associated with this channel
-    std::vector<double> channelAssociatedWiresLength;   ///< length of wires associated with channel
-    std::vector<double> channelAssociatedWiresStartX;   ///< start x position (drift direction) of wires
-    std::vector<double> channelAssociatedWiresEndX;     ///< end x position (drift direction) of wires
-    std::vector<double> channelAssociatedWiresStartY;   ///< start y position (vertical) of wires
-    std::vector<double> channelAssociatedWiresEndY;     ///< end y position (vertical) of wires
-    std::vector<double> channelAssociatedWiresStartZ;   ///< start z position (beam direction) of wires
-    std::vector<double> channelAssociatedWiresEndZ;     ///< end z position (beam direction) of wires
+    std::vector<double> channelAssociatedWiresLength;   ///< geom length of wires associated with channel
+    std::vector<double> channelAssociatedWiresStartX;   ///< geom start x position (drift direction) of wires
+    std::vector<double> channelAssociatedWiresEndX;     ///< geom end x position (drift direction) of wires
+    std::vector<double> channelAssociatedWiresStartY;   ///< geom start y position (vertical) of wires
+    std::vector<double> channelAssociatedWiresEndY;     ///< geom end y position (vertical) of wires
+    std::vector<double> channelAssociatedWiresStartZ;   ///< geom start z position (beam direction) of wires
+    std::vector<double> channelAssociatedWiresEndZ;     ///< geom end z position (beam direction) of wires
+    std::vector<double> channelAssociatedSegmentsStartY;///< excel start y position (vertical) of wires
+    std::vector<double> channelAssociatedSegmentsEndY;  ///< excel end y position (vertical) of wires
+    std::vector<double> channelAssociatedSegmentsStartZ;///< excel start z position (beam direction) of wires
+    std::vector<double> channelAssociatedSegmentsEndZ;  ///< excel end z position (beam direction) of wires
+
 
     // root files to read in
     TFile* tensionsFile;
@@ -686,18 +691,23 @@ void pdsp::TensionAnalysis::beginJob()
   geometryTree->Branch("channelNumberAssociatedWires"       , &channelNumberAssociatedWires);
   geometryTree->Branch("channelAssociatedWiresPlane"        , &channelAssociatedWiresPlane);
   geometryTree->Branch("channelAssociatedAPABuildNumber"    , &channelAssociatedAPABuildNumber);
-  geometryTree->Branch("channelAssociatedWiresLength"       , "std::vector<double>"                 , &channelAssociatedWiresLength);
-  geometryTree->Branch("channelAssociatedWiresStartX"       , "std::vector<double>"                 , &channelAssociatedWiresStartX);
-  geometryTree->Branch("channelAssociatedWiresEndX"         , "std::vector<double>"                 , &channelAssociatedWiresEndX);
-  geometryTree->Branch("channelAssociatedWiresStartY"       , "std::vector<double>"                 , &channelAssociatedWiresStartY);
-  geometryTree->Branch("channelAssociatedWiresEndY"         , "std::vector<double>"                 , &channelAssociatedWiresEndY);
-  geometryTree->Branch("channelAssociatedWiresStartZ"       , "std::vector<double>"                 , &channelAssociatedWiresStartZ);
-  geometryTree->Branch("channelAssociatedWiresEndZ"         , "std::vector<double>"                 , &channelAssociatedWiresEndZ);
+
+  geometryTree->Branch("channelAssociatedWiresLength"    , "std::vector<double>" , &channelAssociatedWiresLength);
+  geometryTree->Branch("channelAssociatedWiresStartX"    , "std::vector<double>" , &channelAssociatedWiresStartX);
+  geometryTree->Branch("channelAssociatedWiresEndX"      , "std::vector<double>" , &channelAssociatedWiresEndX);
+  geometryTree->Branch("channelAssociatedWiresStartY"    , "std::vector<double>" , &channelAssociatedWiresStartY);
+  geometryTree->Branch("channelAssociatedWiresEndY"      , "std::vector<double>" , &channelAssociatedWiresEndY);
+  geometryTree->Branch("channelAssociatedWiresStartZ"    , "std::vector<double>" , &channelAssociatedWiresStartZ);
+  geometryTree->Branch("channelAssociatedWiresEndZ"      , "std::vector<double>" , &channelAssociatedWiresEndZ);
+  geometryTree->Branch("channelAssociatedSegmentsStartY" , "std::vector<double>" , &channelAssociatedSegmentsStartY);
+  geometryTree->Branch("channelAssociatedSegmentsEndY"   , "std::vector<double>" , &channelAssociatedSegmentsEndY);
+  geometryTree->Branch("channelAssociatedSegmentsStartZ" , "std::vector<double>" , &channelAssociatedSegmentsStartZ);
+  geometryTree->Branch("channelAssociatedSegmentsEndZ"   , "std::vector<double>" , &channelAssociatedSegmentsEndZ);
 
   // read in ROOT trees containing wire information
   std::string tensionPath;
   cet::search_path sp("FW_SEARCH_PATH");
-  if(!sp.find_file("tensionanalysis/data/tension_measurements.root", tensionPath)){
+  if(!sp.find_file("tensionanalysis/data/tension_measurements_mod.root", tensionPath)){
     throw cet::exception("FileError")
       << "Cannot find tension_measurements.root file "
       << " bail ungracefully\n\n"
@@ -724,15 +734,42 @@ void pdsp::TensionAnalysis::beginJob()
   treeULayerUK002 = (TTree*)tensionsFile->Get("Tension_ProtoDUNE_UK002_ULAYER");
   treeVLayerUK002 = (TTree*)tensionsFile->Get("Tension_ProtoDUNE_UK002_VLAYER");
 
-  // loop all channels and get the number of assoicated wires, along with their lengths
+  // make a vector of TTrees for easiness
+  std::vector< TTree* > treeVec = {
+   treeXLayerUS001,
+   treeULayerUS001,
+   treeVLayerUS001,
+   treeXLayerUS002,
+   treeULayerUS002,
+   treeVLayerUS002,
+   treeXLayerUS003,
+   treeULayerUS003,
+   treeVLayerUS003,
+   treeXLayerUS004,
+   treeULayerUS004,
+   treeVLayerUS004,
+   treeXLayerUK001,
+   treeULayerUK001,
+   treeVLayerUK001,
+   treeXLayerUK002,
+   treeULayerUK002,
+   treeVLayerUK002
+  };
+
+  // loop all channels and get the number of associated wires, along with their lengths
   for (int i_chan = 0; i_chan < 15360; i_chan++){
-    channelAssociatedWiresLength.resize(0);
-    channelAssociatedWiresStartX.resize(0);
-    channelAssociatedWiresStartY.resize(0);
-    channelAssociatedWiresStartZ.resize(0);
-    channelAssociatedWiresEndX.resize(0);
-    channelAssociatedWiresEndY.resize(0);
-    channelAssociatedWiresEndZ.resize(0);
+    channelAssociatedWiresLength   .resize(0);
+    channelAssociatedWiresStartX   .resize(0);
+    channelAssociatedWiresStartY   .resize(0);
+    channelAssociatedWiresStartZ   .resize(0);
+    channelAssociatedWiresEndX     .resize(0);
+    channelAssociatedWiresEndY     .resize(0);
+    channelAssociatedWiresEndZ     .resize(0);
+    channelAssociatedSegmentsStartY.resize(0);
+    channelAssociatedSegmentsStartZ.resize(0);
+    channelAssociatedSegmentsEndY  .resize(0);
+    channelAssociatedSegmentsEndZ  .resize(0);
+
     std::vector<geo::WireID> wireIDs = geom->ChannelToWire(i_chan);
 
     channelNumber                      = i_chan;
@@ -750,13 +787,61 @@ void pdsp::TensionAnalysis::beginJob()
     for (size_t i_wire = 0; i_wire < wireIDs.size(); i_wire++){
       geo::WireID thisWireID = wireIDs.at(i_wire);
       geo::WireGeo const& thisWireGeo = geom->Wire(thisWireID);
-      channelAssociatedWiresLength.push_back(thisWireGeo.Length());
-      channelAssociatedWiresStartX.push_back(thisWireGeo.GetStart()[0]);
-      channelAssociatedWiresEndX.push_back(thisWireGeo.GetEnd()[0]);
-      channelAssociatedWiresStartY.push_back(thisWireGeo.GetStart()[1]);
-      channelAssociatedWiresEndY.push_back(thisWireGeo.GetEnd()[1]);
-      channelAssociatedWiresStartZ.push_back(thisWireGeo.GetStart()[2]);
-      channelAssociatedWiresEndZ.push_back(thisWireGeo.GetEnd()[2]);
+      channelAssociatedWiresLength. push_back(thisWireGeo.Length());
+      channelAssociatedWiresStartX. push_back(thisWireGeo.GetStart()[0]);
+      channelAssociatedWiresEndX.   push_back(thisWireGeo.GetEnd()[0]);
+      channelAssociatedWiresStartY. push_back(thisWireGeo.GetStart()[1]);
+      channelAssociatedWiresEndY.   push_back(thisWireGeo.GetEnd()[1]);
+      channelAssociatedWiresStartZ. push_back(thisWireGeo.GetStart()[2]);
+      channelAssociatedWiresEndZ.   push_back(thisWireGeo.GetEnd()[2]);
+    }
+
+    for (size_t itree = 0; itree < treeVec.size(); itree++){
+     
+      TTree* t = (TTree*)treeVec.at(itree);
+
+      int   segmentSideAChannel;
+      int   segmentSideBChannel;
+      int   segmentNumber;
+      float segmentStartY;
+      float segmentEndY;
+      float segmentStartZ;
+      float segmentEndZ;
+
+      //int wireOffset = 0;
+      //if (thisHit->View() == 0)
+      //  wireOffset = fWireOffsetU;
+      //if (thisHit->View() == 1)
+      //  wireOffset = fWireOffsetV;
+
+      // numbers from the excel sheets use a different co-ordinate system
+      // the APA measurements were taken with the APA in the horizontal orientation
+      // meaning that x measures the the longest edge, and y measures the shortest edge
+      // 
+      // when querying the geometry, z goes along the direction of the shortest edge and
+      // y measures the longest edge, so rename variables here.
+
+      t->SetBranchAddress("side_a_channel_number" , &segmentSideAChannel);
+      t->SetBranchAddress("side_b_channel_number" , &segmentSideBChannel);
+      t->SetBranchAddress("segment_number"        , &segmentNumber);
+      t->SetBranchAddress("x_start"               , &segmentStartY);
+      t->SetBranchAddress("x_end"                 , &segmentEndY);
+      t->SetBranchAddress("y_start"               , &segmentStartZ);
+      t->SetBranchAddress("y_end"                 , &segmentEndZ);
+
+      // loop the tree and find all of the wires associated with this channel
+      bool isCorrectPlane = false;
+      for (int ientry = 0; ientry < treeVec.at(itree)->GetEntries(); ientry++){
+        t->GetEntry(ientry);
+        if ( segmentSideAChannel == channelNumber || segmentSideBChannel == channelNumber){
+          channelAssociatedSegmentsStartY.push_back(segmentStartY);
+          channelAssociatedSegmentsEndY  .push_back(segmentEndY);
+          channelAssociatedSegmentsStartZ.push_back(segmentStartZ);
+          channelAssociatedSegmentsEndZ  .push_back(segmentEndZ);
+          isCorrectPlane = true;
+        }
+      }
+      if (isCorrectPlane == true) break;
     }
 
     geometryTree->Fill();
