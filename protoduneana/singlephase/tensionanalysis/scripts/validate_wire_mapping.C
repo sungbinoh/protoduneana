@@ -1,3 +1,29 @@
+/**
+ * \brief Validates wire to channel mapping
+ * 
+ * This code uses the output geometry_tree from the tensionanalysis module 
+ * to compare the wire information stored in the geometry and that which
+ * was initially stored in excel sheets (and ported to root trees).
+ *
+ * In particular here, the number of wires connected to each channel is 
+ * compared, in addition to the difference in wire lengths.
+ * 
+ * Note that this only compares the U and V plane wires since there is a
+ * 1-to-1 correspondence for the X planes.
+ *
+ * Usage: root -l -b <input_root_file> validate_wire_mapping.C
+ *
+ * \author Adam Lister
+ *
+ * \date 2020-01-20
+ *
+ * Contact: adam.lister@wisc.edu
+ **/
+
+/**
+ * struct used to store information about the wire
+ * mostly useful for sorting
+ **/
 struct WireAnchors {
   double starty = -1;
   double endy   = -1;
@@ -6,44 +32,51 @@ struct WireAnchors {
   double length = -1;
 };
 
+/**
+ * used to calculate the length of the wire based on the start and 
+ * end points
+ **/
 double calculate_length(double x1, double y1, double x2, double y2){
   double length = std::sqrt(std::pow(x2-x1,2)+std::pow(y2-y1,2));
   return length;
 }
 
+/**
+ * main function
+ **/
 void validate_wire_mapping(){
 
+  /// pass the file as described at top of file
   TTree* geom_tree = (TTree*)_file0->Get("tensionanalysis/geometry_tree");
 
   TH1D* hLengthDiffUTop = new TH1D("hLengthDiffUTop",
-                                   ";Length Difference (mm);Number of Wires",
-                                   100, -10, 20);
+      ";Length Difference (mm);Number of Wires",
+      100, -10, 20);
 
   TH1D* hLengthDiffUMid = new TH1D("hLengthDiffUMid",
-                                   ";Length Difference (mm);Number of Wires",
-                                   100, -10, 20);
+      ";Length Difference (mm);Number of Wires",
+      100, -10, 20);
 
   TH1D* hLengthDiffUBot = new TH1D("hLengthDiffUBot",
-                                   ";Length Difference (mm);Number of Wires",
-                                   100, -10, 20);
+      ";Length Difference (mm);Number of Wires",
+      100, -10, 20);
 
   TH1D* hLengthDiffVTop = new TH1D("hLengthDiffVTop",
-                                   ";Length Difference (mm);Number of Wires",
-                                   100, -10, 20);
+      ";Length Difference (mm);Number of Wires",
+      100, -10, 20);
 
   TH1D* hLengthDiffVMid = new TH1D("hLengthDiffVMid",
-                                   ";Length Difference (mm);Number of Wires",
-                                   100, -10, 20);
+      ";Length Difference (mm);Number of Wires",
+      100, -10, 20);
 
   TH1D* hLengthDiffVBot = new TH1D("hLengthDiffVBot",
-                                   ";Length Difference (mm);Number of Wires",
-                                   100, -10, 20);
-
+      ";Length Difference (mm);Number of Wires",
+      100, -10, 20);
 
   TH2D* hNumSegments    = new TH2D("hNumSegments",
-                                   ";Number of Segments/Channel, Geometry;Number of Segments/Channel, Measured",
-                                   4, 0, 4,
-                                   4, 0, 4);
+      ";Number of Segments/Channel, Geometry;Number of Segments/Channel, Measured",
+      4, 0, 4,
+      4, 0, 4);
 
   int channelNumber;
   int channelAssociatedWiresPlane;
@@ -76,6 +109,10 @@ void validate_wire_mapping(){
     hNumSegments->Fill(segmentsSize, wiresSize);
 
     if (wiresSize != segmentsSize){
+      std::cout 
+        << "channel " << channelNumber << " has " 
+        << wiresSize << "wires simulated, but "
+        << segmentsSize << "measured wires".
       throw std::logic_error("uh oh");
     }
 
@@ -88,6 +125,14 @@ void validate_wire_mapping(){
     if (channelAssociatedWiresPlane == 1)
       maxExt = 5987.6; 
 
+    /**
+     * fill vector of WireAnchors information for wires attached to 
+     * this channel
+     *
+     * note that the direction of the measured channels must be flipped to
+     * coincide with the simulated wires, and that the simulated wires
+     * are stored in cm, not mm, so correct for that
+     **/
     for (int iw = 0; iw < wiresSize; iw++){
       WireAnchors thisWireAnchorMeasured;
       thisWireAnchorMeasured.starty = maxExt-channelAssociatedSegmentsStartY->at(iw);
@@ -95,29 +140,35 @@ void validate_wire_mapping(){
       thisWireAnchorMeasured.endy   = maxExt-channelAssociatedSegmentsEndY  ->at(iw);
       thisWireAnchorMeasured.endz   = maxExt-channelAssociatedSegmentsEndZ  ->at(iw);
       thisWireAnchorMeasured.length = calculate_length(thisWireAnchorMeasured.starty,
-                                                       thisWireAnchorMeasured.startz,
-                                                       thisWireAnchorMeasured.endy,
-                                                       thisWireAnchorMeasured.endz);
+          thisWireAnchorMeasured.startz,
+          thisWireAnchorMeasured.endy,
+          thisWireAnchorMeasured.endz);
       WireAnchors thisWireAnchorSimulated;
       thisWireAnchorSimulated.starty = channelAssociatedWiresStartY->at(iw)*10;
       thisWireAnchorSimulated.startz = channelAssociatedWiresStartZ->at(iw)*10;
       thisWireAnchorSimulated.endy   = channelAssociatedWiresEndY  ->at(iw)*10;
       thisWireAnchorSimulated.endz   = channelAssociatedWiresEndZ  ->at(iw)*10;
       thisWireAnchorSimulated.length = calculate_length(thisWireAnchorSimulated.starty,
-                                                        thisWireAnchorSimulated.startz,
-                                                        thisWireAnchorSimulated.endy,
-                                                        thisWireAnchorSimulated.endz);
+          thisWireAnchorSimulated.startz,
+          thisWireAnchorSimulated.endy,
+          thisWireAnchorSimulated.endz);
 
       wireAnchorsMeasured .push_back(thisWireAnchorMeasured);
       wireAnchorsSimulated.push_back(thisWireAnchorSimulated);
     }
 
+    /**
+     * sort them based on their proximity to the top of the TPC
+     **/
     std::sort(wireAnchorsMeasured.begin(), wireAnchorsMeasured.end(), 
-      [](auto const &a, auto const &b) { return a.starty < b.starty; });
+        [](auto const &a, auto const &b) { return a.starty < b.starty; });
 
     std::sort(wireAnchorsSimulated.begin(), wireAnchorsSimulated.end(), 
-      [](auto const &a, auto const &b) { return a.starty < b.starty; });
+        [](auto const &a, auto const &b) { return a.starty < b.starty; });
 
+    /**
+     * ... and plot the information
+     **/
     for (int iw = 0; iw < wireAnchorsSimulated.size(); iw++){
       if (channelAssociatedWiresPlane == 0){
         if (iw == 0)
@@ -191,10 +242,6 @@ void validate_wire_mapping(){
   TCanvas *c2 = new TCanvas("c2", "c2", 600, 500);
   c2->SetRightMargin(0.18);
   hNumSegments->Draw("colz");
-  //gPad->Update();
-  //TPaletteAxis *palette = (TPaletteAxis*)hNumSegments->GetListOfFunctions()->FindObject("palette");
-  //palette->SetX1(0.85);
-  ////palette->SetX2(0.9);
   gPad->Modified();
   c2->SaveAs("NumberOfSegments.png");
   c2->SaveAs("NumberOfSegments.pdf");
