@@ -1,3 +1,15 @@
+/**
+ * \brief Makes plots showing number of wires connected to each channel, broken up by APA
+ * 
+ * Usage: root -l -b <input_root_file> make_tension_var_plots_per_apa.C
+ *
+ * \author Adam Lister
+ *
+ * \date 2020-01-20
+ *
+ * Contact: adam.lister@wisc.edu
+ **/
+
 void style_plots(TH1D* U, TH1D* V, TH1D* X, int c){
 
   gStyle->SetHatchesSpacing(0.5);
@@ -16,13 +28,19 @@ void style_plots(TH1D* U, TH1D* V, TH1D* X, int c){
 
 }
 
-void make_sanity_plots(){
+void validate_wire_mapping_1d(){
 
   std::vector<std::string> side = {
     "side_a",
-    "side_b"};
+    "side_b"
+  };
 
-  TFile *fIn = new TFile("/dune/app/users/alister1/dunetpc_v08_14_01/srcs/dunetpc/dune/Protodune/singlephase/TensionAnalysis/data/tension_measurements.root", "read");
+  std::vector<std::string> sideTitle = {
+    "Side A",
+    "Side B"
+  };
+
+  TFile *fIn = new TFile("../data/tension_measurements_mod.root", "read");
 
   TTree* tUK001_U = (TTree*)fIn->Get("Tension_ProtoDUNE_UK001_ULAYER");
   TTree* tUK001_V = (TTree*)fIn->Get("Tension_ProtoDUNE_UK001_VLAYER");
@@ -45,24 +63,24 @@ void make_sanity_plots(){
 
   for (int i = 0; i < side.size(); i++){
 
-    TH1D* hUK001_U = new TH1D("hUK001_U", (side.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
-    TH1D* hUK001_V = new TH1D("hUK001_V", (side.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
-    TH1D* hUK001_X = new TH1D("hUK001_X", (side.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
-    TH1D* hUK002_U = new TH1D("hUK002_U", (side.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
-    TH1D* hUK002_V = new TH1D("hUK002_V", (side.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
-    TH1D* hUK002_X = new TH1D("hUK002_X", (side.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
-    TH1D* hUS001_U = new TH1D("hUS001_U", (side.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
-    TH1D* hUS001_V = new TH1D("hUS001_V", (side.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
-    TH1D* hUS001_X = new TH1D("hUS001_X", (side.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
-    TH1D* hUS002_U = new TH1D("hUS002_U", (side.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
-    TH1D* hUS002_V = new TH1D("hUS002_V", (side.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
-    TH1D* hUS002_X = new TH1D("hUS002_X", (side.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
-    TH1D* hUS003_U = new TH1D("hUS003_U", (side.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
-    TH1D* hUS003_V = new TH1D("hUS003_V", (side.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
-    TH1D* hUS003_X = new TH1D("hUS003_X", (side.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
-    TH1D* hUS004_U = new TH1D("hUS004_U", (side.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
-    TH1D* hUS004_V = new TH1D("hUS004_V", (side.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
-    TH1D* hUS004_X = new TH1D("hUS004_X", (side.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
+    TH1D* hUK001_U = new TH1D("hUK001_U", (sideTitle.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
+    TH1D* hUK001_V = new TH1D("hUK001_V", (sideTitle.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
+    TH1D* hUK001_X = new TH1D("hUK001_X", (sideTitle.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
+    TH1D* hUK002_U = new TH1D("hUK002_U", (sideTitle.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
+    TH1D* hUK002_V = new TH1D("hUK002_V", (sideTitle.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
+    TH1D* hUK002_X = new TH1D("hUK002_X", (sideTitle.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
+    TH1D* hUS001_U = new TH1D("hUS001_U", (sideTitle.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
+    TH1D* hUS001_V = new TH1D("hUS001_V", (sideTitle.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
+    TH1D* hUS001_X = new TH1D("hUS001_X", (sideTitle.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
+    TH1D* hUS002_U = new TH1D("hUS002_U", (sideTitle.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
+    TH1D* hUS002_V = new TH1D("hUS002_V", (sideTitle.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
+    TH1D* hUS002_X = new TH1D("hUS002_X", (sideTitle.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
+    TH1D* hUS003_U = new TH1D("hUS003_U", (sideTitle.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
+    TH1D* hUS003_V = new TH1D("hUS003_V", (sideTitle.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
+    TH1D* hUS003_X = new TH1D("hUS003_X", (sideTitle.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
+    TH1D* hUS004_U = new TH1D("hUS004_U", (sideTitle.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
+    TH1D* hUS004_V = new TH1D("hUS004_V", (sideTitle.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
+    TH1D* hUS004_X = new TH1D("hUS004_X", (sideTitle.at(i)+std::string(";Channel Number;N Segments")).c_str(), 15360, 0, 15360);
 
 
     tUK001_U->Draw((side.at(i)+std::string("_channel_number >> hUK001_U")).c_str());
@@ -151,5 +169,7 @@ void make_sanity_plots(){
     right->Draw();
 
     c1->SaveAs((side.at(i)+std::string("_sanity_plots.png")).c_str());
+    c1->SaveAs((side.at(i)+std::string("_sanity_plots.pdf")).c_str());
+
   }
 }

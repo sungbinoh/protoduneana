@@ -154,11 +154,13 @@ void plot_from_file(){
         if (minimum < 10e-10) minimum = 0;
 
         thisVec.at(0)->GetYaxis()->SetRangeUser(yrange.at(iv).at(0),yrange.at(iv).at(1));
+        thisVec.at(0)->GetYaxis()->SetRangeUser(200,400);
+        thisVec.at(0)->GetYaxis()->SetNdivisions(505);
 
         std::string axis;
         if (apas.at(ia) == -1){
           axis = 
-            std::string("All APAs") +
+            //std::string("All APAs") +
             std::string(";Wire Tension (N);")+
             type.at(it) +
             std::string(" ") +
@@ -166,8 +168,8 @@ void plot_from_file(){
         }
         else{
           axis = 
-            std::string("APA ") +
-            std::to_string(apas.at(ia)) +
+            //std::string("APA ") +
+            //std::to_string(apas.at(ia)) +
             std::string(";Wire Tension (N);")+
             type.at(it) +
             std::string(" ") +
@@ -175,6 +177,19 @@ void plot_from_file(){
         }
 
         thisVec.at(0)->SetTitle(axis.c_str());
+        thisVec.at(0)->GetYaxis()->SetTitleFont(43); 
+        thisVec.at(0)->GetYaxis()->SetLabelFont(43); 
+        thisVec.at(0)->GetXaxis()->SetTitleFont(43); 
+        thisVec.at(0)->GetXaxis()->SetLabelFont(43); 
+        thisVec.at(0)->GetYaxis()->SetTitleSize(28); 
+        thisVec.at(0)->GetYaxis()->SetLabelSize(28); 
+        thisVec.at(0)->GetXaxis()->SetTitleSize(28); 
+        thisVec.at(0)->GetXaxis()->SetLabelSize(28); 
+        thisVec.at(0)->GetXaxis()->SetTitleOffset(0.9); 
+        thisVec.at(0)->GetYaxis()->SetTitleOffset(0.95);
+        thisVec.at(0)->GetXaxis()->CenterTitle(); 
+        thisVec.at(0)->GetYaxis()->CenterTitle(); 
+
         thisVec.at(0)->Draw("cap");
         for ( int i = 1; i < thisVec.size(); i++){
           thisVec.at(i)->Draw("same cp");
@@ -192,10 +207,11 @@ void plot_from_file(){
           std::string("_") + 
           type.at(it) + 
           std::string("_apa_") + 
-          std::to_string(apas.at(ia)) + 
-          std::string(".png");
+          std::to_string(apas.at(ia));
 
-        c1->SaveAs(plotName.c_str());
+        c1->SaveAs((plotName+".png").c_str());
+        c1->SaveAs((plotName+".pdf").c_str());
+
       }
     }
   }
