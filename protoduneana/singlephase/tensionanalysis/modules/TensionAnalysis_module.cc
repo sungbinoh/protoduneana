@@ -112,8 +112,6 @@ class pdsp::TensionAnalysis : public art::EDAnalyzer {
 
     float fMinimumResidualRange;
     float fMaximumResidualRange;
-    int   fWireOffsetU;
-    int   fWireOffsetV;
 
     // variables for tree
     TTree* anaTree; ///< analysis tree
@@ -244,8 +242,6 @@ pdsp::TensionAnalysis::TensionAnalysis(fhicl::ParameterSet const& p)
 
   fMinimumResidualRange   = pCuts.get<float>("MinimumResidualRange");
   fMaximumResidualRange   = pCuts.get<float>("MaximumResidualRange");
-  fWireOffsetU            = pCuts.get<int>  ("WireOffsetU");
-  fWireOffsetV            = pCuts.get<int>  ("WireOffsetV");
 
   _selCuts.Configure(pCuts);
 
@@ -262,8 +258,6 @@ pdsp::TensionAnalysis::TensionAnalysis(fhicl::ParameterSet const& p)
     << "\n -- fHitSpacePointAssnLabel : " << fHitSpacePointAssnLabel
     << "\n -- fMinimumResidualRange   : " << fMinimumResidualRange
     << "\n -- fMaximumResidualRange   : " << fMaximumResidualRange
-    << "\n -- fWireOffsetU            : " << fWireOffsetU
-    << "\n -- fWireOffsetV            : " << fWireOffsetV
     << "\n----------------------------------------------";
 
 }
@@ -808,12 +802,6 @@ void pdsp::TensionAnalysis::beginJob()
       float segmentStartZ;
       float segmentEndZ;
 
-      //int wireOffset = 0;
-      //if (thisHit->View() == 0)
-      //  wireOffset = fWireOffsetU;
-      //if (thisHit->View() == 1)
-      //  wireOffset = fWireOffsetV;
-
       // numbers from the excel sheets use a different co-ordinate system
       // the APA measurements were taken with the APA in the horizontal orientation
       // meaning that x measures the the longest edge, and y measures the shortest edge
@@ -977,12 +965,6 @@ pdsp::TensionInformation pdsp::TensionAnalysis::getTensionInformation(art::Ptr< 
   float segmentStartZ;
   float segmentEndZ;
 
-  int wireOffset = 0;
-  if (thisHit->View() == 0)
-    wireOffset = fWireOffsetU;
-  if (thisHit->View() == 1)
-    wireOffset = fWireOffsetV;
-
   std::string thisSide;
   if (sideToUse == pdsp::kA)
     thisSide = "side_a_";
@@ -1028,8 +1010,8 @@ pdsp::TensionInformation pdsp::TensionAnalysis::getTensionInformation(art::Ptr< 
   for (int i = 0; i < t->GetEntries(); i++){
     t->GetEntry(i);
 
-    if (segmentChannel+wireOffset == (int)thisHit->Channel() &&
-        geom->View(thisHit->Channel()) == geom->View(thisHit->Channel()-wireOffset)){
+    if (segmentChannel == (int)thisHit->Channel() &&
+        geom->View(thisHit->Channel()) == geom->View(thisHit->Channel())){
 
       // information from the simulated geometry
       // wires on each plane have different start and end points:

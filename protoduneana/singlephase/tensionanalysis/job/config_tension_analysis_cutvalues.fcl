@@ -60,12 +60,6 @@ tensionsanacutvalues:
   MinimumResidualRange: 100.0
   MaximumResidualRange: 200.0
 
-  # we may not get the segment to channel mapping quite correct,
-  # but this should just be a linear offset so we can fix it
-  # manually
-  WireOffsetU         : -3
-  WireOffsetV         : -3
-
 }
 
 END_PROLOG
