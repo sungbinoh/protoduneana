@@ -49,6 +49,7 @@ TGraphErrors* make_graph(TH2D* hist, std::string type){
 
       yval.push_back(mean);
       yvalerr.push_back(meanerr);
+
     }
 
     else if ( type == "median" ){
@@ -165,13 +166,13 @@ void make_tension_var_plots_per_apa(){
         rmsGraph->SetName((plotName+std::string("_rms")).c_str());
         rmsGraph->Write();
 
-        TGraphErrors* meanGraph = make_graph(tensionHist, "mean");       
-        meanGraph->SetName((plotName+std::string("_mean")).c_str());
-        meanGraph->Write();
-
         TGraphErrors* medianGraph = make_graph(tensionHist, "median");       
         medianGraph->SetName((plotName+std::string("_median")).c_str());
         medianGraph->Write();
+
+        TGraphErrors* meanGraph = make_graph(tensionHist, "mean");       
+        meanGraph->SetName((plotName+std::string("_mean")).c_str());
+        meanGraph->Write();
 
         fOut->Write();
 

@@ -13,7 +13,6 @@
  * Contact: adam.lister@wisc.edu
  **/
 
-
 void make_wire_tension_fn_position(){
 
   /**
@@ -87,18 +86,20 @@ void make_wire_tension_fn_position(){
       for (int iside = 0; iside < side.size(); iside++){
 
         float tension;
-        float x_start;
-        float x_end;
-        float y_start;
-        float y_end;
+        float x_start = 0;
+        float x_end = 5987.6;
+        float y_start = 0;
+        float y_end = 0;
 
         std::string tensionString = "side_" + side.at(iside) + "_final_tension";
 
         t->SetBranchAddress(tensionString.c_str() , &tension);
-        t->SetBranchAddress("x_start"             , &x_start);
-        t->SetBranchAddress("x_end"               , &x_end);
-        t->SetBranchAddress("y_start"             , &y_start);
-        t->SetBranchAddress("y_end"               , &y_end);
+        if (layers.at(ilayer) != "XLAYER"){
+          t->SetBranchAddress("x_start"             , &x_start);
+          t->SetBranchAddress("x_end"               , &x_end);
+          t->SetBranchAddress("y_start"             , &y_start);
+          t->SetBranchAddress("y_end"               , &y_end);
+        }
 
         TCanvas* c1 = new TCanvas("c1", "c1", 500, 1000);
 
@@ -116,7 +117,13 @@ void make_wire_tension_fn_position(){
         for (int i = 0; i < t->GetEntries(); i++){
           t->GetEntry(i);
           if (tension <= 0) continue;
-         
+
+          if (layers.at(ilayer) == "XLAYER"){
+            y_start += 4.75;
+            y_end   += 4.75;
+          }
+
+      
           /// pull colour from the gradient histogram
           Int_t ci = palette->GetBinColor(hGradient->GetXaxis()->FindBin(tension),1);
           TLine *line = new TLine(y_start, x_start, y_end, x_end);

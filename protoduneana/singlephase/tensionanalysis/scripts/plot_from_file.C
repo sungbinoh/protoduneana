@@ -41,30 +41,30 @@ void plot_from_file(){
   };
 
   std::vector< std:: string >  vars = {
-    "trackHitCaloChargeDep",
-    "trackHitCaloEnergyDep",
-    "trackHitRMS",
-    "trackHitPeakTime",
-    "trackHitPeakAmplitude",
-    "trackHitIntegral"
+    //"trackHitCaloChargeDep",
+    "trackHitCaloEnergyDep"//,
+    //"trackHitRMS",
+    //"trackHitPeakTime",
+    //"trackHitPeakAmplitude",
+    //"trackHitIntegral"
   };
 
   std::vector<std::vector<int>> yrange ={
-    {0, 800},
-    {0, 20},
-    {0, 20},
-    {0, 10000},
-    {0, 100},
-    {0, 1000}
+    //{0, 800},
+    {1, 3}//,
+    //{0, 20},
+    //{0, 10000},
+    //{0, 100},
+    //{0, 1000}
   };
 
   std::vector< std::string > labels = {
-    "Hit dQ/dx (ADC*/cm)",
-    "Hit dE/dx (MeV/cm)",
-    "Hit RMS",
-    "Hit Peak Time (#mu s)",
-    "Hit Peak Amplitude (ADC*)",
-    "Hit Integral"
+    //"Hit dQ/dx (ADC*/cm)",
+    "Hit dE/dx (MeV/cm)"
+    //"Hit RMS",
+    //"Hit Peak Time (#mu s)",
+    //"Hit Peak Amplitude (ADC*)",
+    //"Hit Integral"
   };
 
   std::vector< int > apas = {
@@ -154,7 +154,7 @@ void plot_from_file(){
         if (minimum < 10e-10) minimum = 0;
 
         thisVec.at(0)->GetYaxis()->SetRangeUser(yrange.at(iv).at(0),yrange.at(iv).at(1));
-        thisVec.at(0)->GetYaxis()->SetRangeUser(200,400);
+        //thisVec.at(0)->GetYaxis()->SetRangeUser(200,400);
         thisVec.at(0)->GetYaxis()->SetNdivisions(505);
 
         std::string axis;
@@ -168,8 +168,8 @@ void plot_from_file(){
         }
         else{
           axis = 
-            //std::string("APA ") +
-            //std::to_string(apas.at(ia)) +
+            std::string("APA ") +
+            std::to_string(apas.at(ia)) +
             std::string(";Wire Tension (N);")+
             type.at(it) +
             std::string(" ") +
