@@ -4,7 +4,7 @@ tensionsanaproducerlabels:
 {
 
   # for dead channel analysis
-  AllHitLabel          : "linecluster"
+  AllHitLabel          : "hitpdune"
   
   # all for tension analysis
   PFPLabel               : "stopmufilter"
