@@ -4,6 +4,7 @@
 #include "config_stopping_mu_filter_cutvalues.fcl"
 #include "config_stopping_mu_filter_fiducialvolume.fcl"
 #include "ProtoDUNEFembFilter.fcl"
+#include "missingproductfilter.fcl"
 
 process_name: StoppingMuFilter
 
@@ -28,6 +29,8 @@ physics:
   filters:
   {
     fembfilter: @local::pdsp_fembfilter_all
+    
+    missingproductfilter: @local::standard_missingproductfilter
 
     stopmufilter: 
     {
@@ -41,7 +44,7 @@ physics:
   } # analyzers
 
   stream1: [ out1 ]
-  analysis: [ fembfilter, stopmufilter ]
+  analysis: [ missingproductfilter, fembfilter, stopmufilter ]
   trigger_paths: [ analysis ]
   end_paths: [ stream1 ]
 } # physics
