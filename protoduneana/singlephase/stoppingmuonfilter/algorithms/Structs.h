@@ -55,6 +55,14 @@ namespace pdsp{
     std::vector<double> angleValue;
   };
 
+  struct CalibrationParameters
+  {
+    double calibFactor          = -1;
+    double normalisationFactor  = -1;
+    std::string yzCorrFactorLoc = "noLocation";
+    std::string xCorrFactorLoc  = "noLocation";
+  };
+
 }
 
 #endif
