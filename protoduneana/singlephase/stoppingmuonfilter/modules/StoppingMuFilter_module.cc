@@ -41,10 +41,14 @@
 #include "lardataobj/AnalysisBase/Calorimetry.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "larcore/Geometry/Geometry.h"
+#include "lardataobj/RecoBase/TrackingTypes.h"
 
 // root
+#include "TFile.h"
 #include "TTree.h"
 #include "TH2.h"
+#include "TH3.h"
+#include "TH1.h"
 
 // cpp
 #include <memory>
@@ -78,8 +82,16 @@ class pdsp::StoppingMuFilter : public art::EDFilter {
     // Selected optional functions.
     void beginJob() override;
 
+    bool beginRun(art::Run& r) override;
+
     /// function to clear all vectors
     void clearVectors();
+
+    /// apply modified box model
+    double getModBoxdEdX(float dqdx, float efield);
+
+    /// get e field
+    double calcEField(float xval, float yval, float zval);
 
   private:
 
@@ -129,15 +141,18 @@ class pdsp::StoppingMuFilter : public art::EDFilter {
     std::vector< std::vector< double > >* trackMinDistLen         = nullptr;
     std::vector< std::vector< double > >* trackMinDistAngle       = nullptr;
     std::vector< std::vector< float > >* trackdEdxByHitPlane0     = nullptr;
+    std::vector< std::vector< float > >* trackdQdxByHitPlane0uncal= nullptr;
     std::vector< std::vector< float > >* trackdQdxByHitPlane0     = nullptr;
     std::vector< std::vector< float > >* trackResRangeByHitPlane0 = nullptr;
     std::vector< std::vector< float > >* trackdEdxByHitPlane1     = nullptr;
+    std::vector< std::vector< float > >* trackdQdxByHitPlane1uncal= nullptr;
     std::vector< std::vector< float > >* trackdQdxByHitPlane1     = nullptr;
     std::vector< std::vector< float > >* trackResRangeByHitPlane1 = nullptr;
     std::vector< std::vector< float > >* trackdEdxByHitPlane2     = nullptr;
+    std::vector< std::vector< float > >* trackdQdxByHitPlane2uncal= nullptr;
     std::vector< std::vector< float > >* trackdQdxByHitPlane2     = nullptr;
     std::vector< std::vector< float > >* trackResRangeByHitPlane2 = nullptr;
-    
+
     // other vairables
     ::util::GeometryHelper _geomHelper;
     ::util::FiducialVolume _fidVolOuter;
@@ -145,6 +160,26 @@ class pdsp::StoppingMuFilter : public art::EDFilter {
     ::util::SelectionCuts  _selCuts;
     int isData;
     bool isPass;
+
+    // calibration parameters
+    CalibrationParameters calibPars;
+    TFile* EField   = nullptr;
+    TFile* YZFile   = nullptr;
+    TFile* XFile    = nullptr;
+    TH2F* YZNegHist = nullptr;
+    TH2F* YZPosHist = nullptr;
+    TH1F* XHist     = nullptr;
+    TH3F *xneg      = nullptr;      
+    TH3F *yneg      = nullptr;
+    TH3F *zneg      = nullptr;
+    TH3F *xpos      = nullptr;
+    TH3F *ypos      = nullptr;
+    TH3F *zpos      = nullptr;
+
+    double rho   = 1.383;   ///< (g/cm^3) liquid argon density at 18psi
+    double betap = 0.212;   ///< (kV/cm)(g/cm^2)/MeV
+    double alpha = 0.93;    ///< argoneut measured value 
+    double wion  = 23.6e-6; ///< argoneut measured value
 
 };
 
@@ -188,44 +223,44 @@ pdsp::StoppingMuFilter::StoppingMuFilter(fhicl::ParameterSet const& p)
   // get detector geometry
   pdsp::GeometryBoundaries thisFullDetActiveVol = _geomHelper.GetFullDetectorActiveVolumeBoundaries(geo);
   pdsp::ActiveVolumeBoundaries thisActiveVol    = _geomHelper.GetActiveVolumeBoundaries(geo);
-  
+
   MF_LOG_VERBATIM("StoppingMuFilter")
-  << "Full Detector geometry: "
-  << "\n -- lowx : "            << thisFullDetActiveVol.lowx
-  << "\n -- highx: "            << thisFullDetActiveVol.highx
-  << "\n -- lowy : "            << thisFullDetActiveVol.lowy
-  << "\n -- highy: "            << thisFullDetActiveVol.highy
-  << "\n -- lowz : "            << thisFullDetActiveVol.lowz
-  << "\n -- highz: "            << thisFullDetActiveVol.highz
-  << "\nFull Detector has "     << thisActiveVol.numVolumes
-  << "subvolumes";
+    << "Full Detector geometry: "
+    << "\n -- lowx : "            << thisFullDetActiveVol.lowx
+    << "\n -- highx: "            << thisFullDetActiveVol.highx
+    << "\n -- lowy : "            << thisFullDetActiveVol.lowy
+    << "\n -- highy: "            << thisFullDetActiveVol.highy
+    << "\n -- lowz : "            << thisFullDetActiveVol.lowz
+    << "\n -- highz: "            << thisFullDetActiveVol.highz
+    << "\nFull Detector has "     << thisActiveVol.numVolumes
+    << "subvolumes";
 
   auto const& thisActiveVolMap = thisActiveVol.activeVolumesMap;
 
-   for (auto tAV_it=thisActiveVolMap.begin(); tAV_it!=thisActiveVolMap.end(); tAV_it++){
-     pdsp::GeometryBoundaries thisTpcVol = tAV_it->second;
+  for (auto tAV_it=thisActiveVolMap.begin(); tAV_it!=thisActiveVolMap.end(); tAV_it++){
+    pdsp::GeometryBoundaries thisTpcVol = tAV_it->second;
 
-     MF_LOG_VERBATIM("StoppingMuFilter")
-     << "Example TPC geometry for TPC: " << tAV_it->first
-     << "\n -- lowx : " << thisTpcVol.lowx
-     << "\n -- highx: " << thisTpcVol.highx
-     << "\n -- lowy : " << thisTpcVol.lowy
-     << "\n -- highy: " << thisTpcVol.highy
-     << "\n -- lowz : " << thisTpcVol.lowz
-     << "\n -- highz: " << thisTpcVol.highz;
-   }
+    MF_LOG_VERBATIM("StoppingMuFilter")
+      << "Example TPC geometry for TPC: " << tAV_it->first
+      << "\n -- lowx : " << thisTpcVol.lowx
+      << "\n -- highx: " << thisTpcVol.highx
+      << "\n -- lowy : " << thisTpcVol.lowy
+      << "\n -- highy: " << thisTpcVol.highy
+      << "\n -- lowz : " << thisTpcVol.lowz
+      << "\n -- highz: " << thisTpcVol.highz;
+  }
 
   // define fiducial volumes
   _fidVolOuter.Configure(pOuterFV, 
-                         thisFullDetActiveVol);
+      thisFullDetActiveVol);
   _fidVolOuter.Configure(pTpcFV, 
-                         thisActiveVol);
+      thisActiveVol);
   _fidVolInner.Configure(pInnerFV, 
-                         thisFullDetActiveVol);
+      thisFullDetActiveVol);
 
   _fidVolOuter.PrintConfiguration();
   _fidVolInner.PrintConfiguration();
-  
+
   // configure selection cuts 
   _selCuts.Configure(pCuts);
   _selCuts.PrintConfiguration();
@@ -298,177 +333,244 @@ bool pdsp::StoppingMuFilter::filter(art::Event& e)
   MF_LOG_VERBATIM("pdsp::StoppingMuFilter::filter")
     << "looping PFP vector which has size " << pfpPtrVector.size();
 
-  for ( size_t i = 0; i < pfpPtrVector.size(); i++){
+  // check to make sure run number is calibrated
+  if (calibPars.calibFactor != -1){
 
-    art::Ptr< recob::PFParticle > thisPfp = pfpPtrVector.at(i);
+    for ( size_t i = 0; i < pfpPtrVector.size(); i++){
 
-    if ((tracksFromPfps.at(thisPfp.key())).size() == 0) continue;
+      art::Ptr< recob::PFParticle > thisPfp = pfpPtrVector.at(i);
 
-    // find particles which are identified as track-like and have a single 
-    // daughter
-    if (thisPfp->PdgCode() == 13){
+      if ((tracksFromPfps.at(thisPfp.key())).size() == 0) continue;
 
-      art::Ptr< recob::Track > thisTrack = (tracksFromPfps.at(thisPfp.key())).at(0);
+      // find particles which are identified as track-like and have a single 
+      // daughter
+      if (thisPfp->PdgCode() == 13){
 
-      trackStartXZAllTracks ->Fill(thisTrack->Start().Z(), thisTrack->Start().X());
-      trackEndXZAllTracks   ->Fill(thisTrack->End().Z()  , thisTrack->End().X());
-      trackStartYZAllTracks ->Fill(thisTrack->Start().Z(), thisTrack->Start().Y());
-      trackEndYZAllTracks   ->Fill(thisTrack->End().Z()  , thisTrack->End().Y());
+        art::Ptr< recob::Track > thisTrack = (tracksFromPfps.at(thisPfp.key())).at(0);
 
-      // associated t0 must exist
-      if (t0sFromPfps.at(thisPfp.key()).size() == 0 && fIsUseT0 == true) continue;
-      
-      // if t0s are being used then get the associated T0, 
-      // if not, then create a dud to put in the file. 
-      // Not the best handling but for now it'll do.
+        trackStartXZAllTracks ->Fill(thisTrack->Start().Z(), thisTrack->Start().X());
+        trackEndXZAllTracks   ->Fill(thisTrack->End().Z()  , thisTrack->End().X());
+        trackStartYZAllTracks ->Fill(thisTrack->Start().Z(), thisTrack->Start().Y());
+        trackEndYZAllTracks   ->Fill(thisTrack->End().Z()  , thisTrack->End().Y());
 
-      art::Ptr< anab::T0 > thisT0;
-      if (fIsUseT0)
-        thisT0 = (t0sFromPfps.at(thisPfp.key())).at(0);
-      
-      // track must meet fiducial requirements (enter the detector and stop)
-      if (  !_fidVolOuter.IsInDetectorFV(thisTrack->Start().X(), thisTrack->Start().Y(), thisTrack->Start().Z()) 
-          && _fidVolInner.IsInDetectorFV(thisTrack->End().X()  , thisTrack->End().Y()  , thisTrack->End().Z())
-          && _fidVolOuter.IsInTpcFV(     thisTrack->Start().X(), thisTrack->Start().Y(), thisTrack->Start().Z())
-          && _fidVolOuter.IsInTpcFV(     thisTrack->End().X()  , thisTrack->End().Y()  , thisTrack->End().Z())){
+        // associated t0 must exist
+        if (t0sFromPfps.at(thisPfp.key()).size() == 0 && fIsUseT0 == true) continue;
 
-        std::vector< pdsp::CutResult > isPassThetaXZ = _selCuts.IsPassesThetaXZSelection(thisTrack);
-        std::vector< pdsp::CutResult > isPassThetaYZ = _selCuts.IsPassesThetaYZSelection(thisTrack);
+        // if t0s are being used then get the associated T0, 
+        // if not, then create a dud to put in the file. 
+        // Not the best handling but for now it'll do.
 
-        // if there's a demand that the track pass the theta_xz 
-        // cut in a specific plane then apply that
-        if (fIsThetaXZCutInPlane){
-          if (!(isPassThetaXZ.at(fThetaXZPlaneToCutOn).result))
-            continue;
-        }
-
-        // if there's a demand that the track pass the theta_yz 
-        // cut in a specific plane then apply that
-        if (fIsThetaYZCutInPlane){
-          if (!(isPassThetaYZ.at(fThetaYZPlaneToCutOn).result))
-            continue;
-        }
-
-        // this demands that the minimum distance and angle cut be met
-        // i.e. this removes broken tracks
-        pdsp::MinDistCutResult thisMinDistCutResult = _selCuts.IsPassesMinimumDistanceCut(thisTrack, trackPtrVector); 
-
-        if (fIsUseMinDistCut){
-          if (!thisMinDistCutResult.result)
-            continue;
-        }
-
-        // get the hits associated with this track and make the 
-        // demand that the minimum time be greater than some value
-        std::vector< art::Ptr< recob::Hit > > theseHits = hitsFromTracks.at(thisTrack.key());
-
-        pdsp::CutResult thisMinHitCutResult = _selCuts.IsPassesMinHitPeakTime(theseHits);
-
-        if (fIsUseMinHitPeakTimeCut){
-          if(!thisMinHitCutResult.result)
-            continue;
-        }
- 
-        // If we reach this point, the event is selected, and we're going 
-        // to go ahead and save the information to the tree
-        MF_LOG_VERBATIM("StoppingMuFilter")
-        << "-- Event selected";
-
-        trackStartX         ->push_back(thisTrack->Start().X());
-        trackStartY         ->push_back(thisTrack->Start().Y());
-        trackStartZ         ->push_back(thisTrack->Start().Z());
-        trackEndX           ->push_back(thisTrack->End().X());
-        trackEndY           ->push_back(thisTrack->End().Y());
-        trackEndZ           ->push_back(thisTrack->End().Z());
-        trackLength         ->push_back(thisTrack->Length());
-        trackTheta          ->push_back(thisTrack->Theta());
-        trackPhi            ->push_back(thisTrack->Phi());
-        trackAzimuthal      ->push_back(thisTrack->AzimuthAngle());
-        trackZenith         ->push_back(thisTrack->ZenithAngle());
-        trackThetaXZ        ->push_back((isPassThetaXZ.at(2)).value);
-        trackThetaYZ        ->push_back((isPassThetaYZ.at(2)).value);
-        trackHitMinPeakTime ->push_back(thisMinHitCutResult.value);
-        trackMinDistLen     ->push_back(thisMinDistCutResult.lenValue);
-        trackMinDistAngle   ->push_back(thisMinDistCutResult.angleValue);
-       
-        // now deal with getting information for associations
-        recob::PFParticle pfpForCollection = *(thisPfp.get());
-        recob::Track trackForCollection    = *(thisTrack.get());
-        anab::T0 t0ForCollection(-1, -1, -1);
+        art::Ptr< anab::T0 > thisT0;
         if (fIsUseT0)
-          t0ForCollection = *(thisT0.get());
+          thisT0 = (t0sFromPfps.at(thisPfp.key())).at(0);
 
-        pfpCollection  ->push_back(pfpForCollection);
-        trackCollection->push_back(trackForCollection);
-        t0Collection   ->push_back(t0ForCollection);
+        // track must meet fiducial requirements (enter the detector and stop)
+        if (  !_fidVolOuter.IsInDetectorFV(thisTrack->Start().X(), thisTrack->Start().Y(), thisTrack->Start().Z()) 
+            && _fidVolInner.IsInDetectorFV(thisTrack->End().X()  , thisTrack->End().Y()  , thisTrack->End().Z())
+            && _fidVolOuter.IsInTpcFV(     thisTrack->Start().X(), thisTrack->Start().Y(), thisTrack->Start().Z())
+            && _fidVolOuter.IsInTpcFV(     thisTrack->End().X()  , thisTrack->End().Y()  , thisTrack->End().Z())){
 
-        art::Ptr<recob::PFParticle> pfpForCollectionPtr   = makePfpPtr(pfpCollection->size()-1);
-        art::Ptr<recob::Track>      trackForCollectionPtr = makeTrackPtr(trackCollection->size()-1);
-        art::Ptr<anab::T0>          t0ForCollectionPtr    = makeT0Ptr(t0Collection->size() -1);
+          std::vector< pdsp::CutResult > isPassThetaXZ = _selCuts.IsPassesThetaXZSelection(thisTrack);
+          std::vector< pdsp::CutResult > isPassThetaYZ = _selCuts.IsPassesThetaYZSelection(thisTrack);
 
-        // get calorimetry information
-        std::vector< art::Ptr< anab::Calorimetry > > theseCalo = caloFromTracks.at(thisTrack.key());
-        std::vector< art::Ptr< anab::Calorimetry > > calorimetryPtrCollection;
-        for (size_t i_cal = 0; i_cal < theseCalo.size(); i_cal++){
-
-          // first deal with getting the stuff for association creation
-          anab::Calorimetry calorimetryForCollection = *((theseCalo.at(i_cal)).get());
-          calorimetryCollection->push_back(calorimetryForCollection);
-         
-          art::Ptr< anab::Calorimetry > calorimetryForCollectionPtr = makeCalorimetryPtr(calorimetryCollection->size() -1);
-          calorimetryPtrCollection.push_back(calorimetryForCollectionPtr);
-
-          // and now fill stuff for the output tree
-          if (theseCalo.at(i_cal)->PlaneID().Plane == 0){
-            trackdEdxByHitPlane0    ->push_back(theseCalo.at(i_cal)->dEdx());
-            trackdQdxByHitPlane0    ->push_back(theseCalo.at(i_cal)->dQdx());
-            trackResRangeByHitPlane0->push_back(theseCalo.at(i_cal)->ResidualRange());
+          // if there's a demand that the track pass the theta_xz 
+          // cut in a specific plane then apply that
+          if (fIsThetaXZCutInPlane){
+            if (!(isPassThetaXZ.at(fThetaXZPlaneToCutOn).result))
+              continue;
           }
-          if (theseCalo.at(i_cal)->PlaneID().Plane == 1){
-            trackdEdxByHitPlane1    ->push_back(theseCalo.at(i_cal)->dEdx());
-            trackdQdxByHitPlane1    ->push_back(theseCalo.at(i_cal)->dQdx());
-            trackResRangeByHitPlane1->push_back(theseCalo.at(i_cal)->ResidualRange());
+
+          // if there's a demand that the track pass the theta_yz 
+          // cut in a specific plane then apply that
+          if (fIsThetaYZCutInPlane){
+            if (!(isPassThetaYZ.at(fThetaYZPlaneToCutOn).result))
+              continue;
           }
-          if (theseCalo.at(i_cal)->PlaneID().Plane == 2){
-            trackdEdxByHitPlane2    ->push_back(theseCalo.at(i_cal)->dEdx());
-            trackdQdxByHitPlane2    ->push_back(theseCalo.at(i_cal)->dQdx());
-            trackResRangeByHitPlane2->push_back(theseCalo.at(i_cal)->ResidualRange());
+
+          // this demands that the minimum distance and angle cut be met
+          // i.e. this removes broken tracks
+          pdsp::MinDistCutResult thisMinDistCutResult = _selCuts.IsPassesMinimumDistanceCut(thisTrack, trackPtrVector); 
+
+          if (fIsUseMinDistCut){
+            if (!thisMinDistCutResult.result)
+              continue;
           }
-        
+
+          // get the hits associated with this track and make the 
+          // demand that the minimum time be greater than some value
+          std::vector< art::Ptr< recob::Hit > > theseHits = hitsFromTracks.at(thisTrack.key());
+
+          pdsp::CutResult thisMinHitCutResult = _selCuts.IsPassesMinHitPeakTime(theseHits);
+
+          if (fIsUseMinHitPeakTimeCut){
+            if(!thisMinHitCutResult.result)
+              continue;
+          }
+
+          // If we reach this point, the event is selected, and we're going 
+          // to go ahead and save the information to the tree
+          MF_LOG_VERBATIM("StoppingMuFilter")
+            << "-- Event selected";
+
+          trackStartX         ->push_back(thisTrack->Start().X());
+          trackStartY         ->push_back(thisTrack->Start().Y());
+          trackStartZ         ->push_back(thisTrack->Start().Z());
+          trackEndX           ->push_back(thisTrack->End().X());
+          trackEndY           ->push_back(thisTrack->End().Y());
+          trackEndZ           ->push_back(thisTrack->End().Z());
+          trackLength         ->push_back(thisTrack->Length());
+          trackTheta          ->push_back(thisTrack->Theta());
+          trackPhi            ->push_back(thisTrack->Phi());
+          trackAzimuthal      ->push_back(thisTrack->AzimuthAngle());
+          trackZenith         ->push_back(thisTrack->ZenithAngle());
+          trackThetaXZ        ->push_back((isPassThetaXZ.at(2)).value);
+          trackThetaYZ        ->push_back((isPassThetaYZ.at(2)).value);
+          trackHitMinPeakTime ->push_back(thisMinHitCutResult.value);
+          trackMinDistLen     ->push_back(thisMinDistCutResult.lenValue);
+          trackMinDistAngle   ->push_back(thisMinDistCutResult.angleValue);
+
+          // now deal with getting information for associations
+          recob::PFParticle pfpForCollection = *(thisPfp.get());
+          recob::Track trackForCollection    = *(thisTrack.get());
+          anab::T0 t0ForCollection(-1, -1, -1);
+          if (fIsUseT0)
+            t0ForCollection = *(thisT0.get());
+
+          pfpCollection  ->push_back(pfpForCollection);
+          trackCollection->push_back(trackForCollection);
+          t0Collection   ->push_back(t0ForCollection);
+
+          art::Ptr<recob::PFParticle> pfpForCollectionPtr   = makePfpPtr(pfpCollection->size()-1);
+          art::Ptr<recob::Track>      trackForCollectionPtr = makeTrackPtr(trackCollection->size()-1);
+          art::Ptr<anab::T0>          t0ForCollectionPtr    = makeT0Ptr(t0Collection->size() -1);
+
+          // get calorimetry information
+          std::vector< art::Ptr< anab::Calorimetry > > theseCalo = caloFromTracks.at(thisTrack.key());
+          std::vector< art::Ptr< anab::Calorimetry > > calorimetryPtrCollection;
+
+          for (size_t i_cal = 0; i_cal < theseCalo.size(); i_cal++){
+
+            art::Ptr< anab::Calorimetry > thisCalo = theseCalo.at(i_cal);
+            anab::Calorimetry calorimetryForCollection = *(thisCalo.get());
+
+            // calibrate dqdx points
+            float yzcorrf;
+            float xcorrf;
+            std::vector< float >   trackdQdx = thisCalo->dQdx();
+            std::vector< float >   trackdEdx = thisCalo->dEdx();
+            std::vector< recob::tracking::Point_t > trackXYZ  = thisCalo->XYZ();
+
+            for (size_t idqdx = 0; idqdx < trackdQdx.size(); idqdx++){
+
+              recob::tracking::Point_t thisPoint = trackXYZ.at(idqdx);
+              float thisdQdx = trackdQdx.at(idqdx);
+
+              // yz correction
+              if (thisPoint.X() < 0)
+                yzcorrf = YZNegHist->GetBinContent(YZNegHist->FindBin(thisPoint.Z(), thisPoint.Y()));
+              if (thisPoint.X() >= 0)
+                yzcorrf = YZPosHist->GetBinContent(YZPosHist->FindBin(thisPoint.Z(), thisPoint.Y()));
+              
+              // x correction
+              xcorrf = XHist->GetBinContent(XHist->FindBin(thisPoint.X()));
+
+              // dqdx correction
+              trackdQdx.at(idqdx) = thisdQdx *
+                                    calibPars.normalisationFactor *
+                                    xcorrf *
+                                    yzcorrf /
+                                    calibPars.calibFactor;
+
+              std::cout << "init dqdx  : " << thisdQdx << std::endl;
+              std::cout << "norm factor: " << calibPars.normalisationFactor << std::endl;
+              std::cout << "xcorrf     : " << xcorrf << std::endl;
+              std::cout << "yzcorrf    : " << yzcorrf << std::endl;
+              std::cout << "calibfactor: " << calibPars.calibFactor << std::endl;
+              std::cout << "final dqdx : " << trackdQdx.at(idqdx) << std::endl;
+
+              // sce effect
+              float efield = this->calcEField(thisPoint.X(), 
+                                              thisPoint.Y(), 
+                                              thisPoint.Z());
+             
+              std::cout << "efield     : " << efield << std::endl;
+
+              // get dedx
+              trackdEdx.at(idqdx) = this->getModBoxdEdX(thisdQdx, 
+                                                        efield);
+
+              std::cout << "final dedx : " << trackdEdx.at(idqdx) << std::endl;
+            }
+
+            // first deal with getting the stuff for association creation
+            calorimetryForCollection.fdQdx = trackdQdx;
+            calorimetryForCollection.fdEdx = trackdEdx;
+
+            std::cout << "pushing back to vector..." << std::endl;
+            calorimetryCollection->push_back(calorimetryForCollection);
+
+            std::cout << "making pointer" << std::endl;
+            art::Ptr< anab::Calorimetry > calorimetryForCollectionPtr = makeCalorimetryPtr(calorimetryCollection->size() -1);
+
+            std::cout << "pushing back to vector again" << std::endl;
+            calorimetryPtrCollection.push_back(calorimetryForCollectionPtr);
+
+            std::cout << "save to tree" << std::endl;
+            // and now fill stuff for the output tree
+            if (thisCalo->PlaneID().Plane == 0){
+              trackdEdxByHitPlane0     ->push_back(calorimetryForCollection.dEdx());
+              trackdQdxByHitPlane0uncal->push_back(thisCalo->dQdx());
+              trackdQdxByHitPlane0     ->push_back(calorimetryForCollection.dQdx());
+              trackResRangeByHitPlane0 ->push_back(calorimetryForCollection.ResidualRange());
+            }
+            if (thisCalo->PlaneID().Plane == 1){
+              trackdEdxByHitPlane1     ->push_back(calorimetryForCollection.dEdx());
+              trackdQdxByHitPlane1uncal->push_back(thisCalo->dQdx());
+              trackdQdxByHitPlane1     ->push_back(calorimetryForCollection.dQdx());
+              trackResRangeByHitPlane1 ->push_back(calorimetryForCollection.ResidualRange());
+            }
+            if (thisCalo->PlaneID().Plane == 2){
+              trackdEdxByHitPlane2     ->push_back(calorimetryForCollection.dEdx());
+              trackdQdxByHitPlane2uncal->push_back(thisCalo->dQdx());
+              trackdQdxByHitPlane2     ->push_back(calorimetryForCollection.dQdx());
+              trackResRangeByHitPlane2 ->push_back(calorimetryForCollection.ResidualRange());
+            }
+
+          }
+
+          std::cout << "creating association" << std::endl;
+          util::CreateAssn(*this, e, trackForCollectionPtr, calorimetryPtrCollection, *trackCalorimetryAssn); 
+
+          std::vector< art::Ptr<recob::Hit> >hitPtrCollection;
+
+          // now get hit information for creating the associations
+          for (size_t iH = 0; iH < theseHits.size(); iH++){
+            hitCollection->push_back(*((theseHits.at(iH)).get()));
+            art::Ptr<recob::Hit> hitForCollectionPtr = makeHitPtr(hitCollection->size() -1);
+            hitPtrCollection.push_back(hitForCollectionPtr);
+
+            if (spacePointFromHits.at((theseHits.at(iH)).key()).size() != 0){
+              art::Ptr<recob::SpacePoint> thisSpacePoint = spacePointFromHits.at((theseHits.at(iH)).key()).at(0);
+
+              spacePointCollection->push_back(*(thisSpacePoint.get()));
+              art::Ptr<recob::SpacePoint> spacePointForCollectionPtr = makeSpacePointPtr(spacePointCollection->size() -1);
+
+              // need to create a 1-to-1 assciation for spacepoints to hits
+              util::CreateAssn(*this, e, spacePointForCollectionPtr, hitForCollectionPtr, *hitSpacePointAssn); 
+            }
+          }
+
+          util::CreateAssn(*this, e, trackForCollectionPtr, pfpForCollectionPtr  , *pfpTrackAssn);
+          util::CreateAssn(*this, e, trackForCollectionPtr, hitPtrCollection     , *trackHitAssn);
+          util::CreateAssn(*this, e, t0ForCollectionPtr   , trackForCollectionPtr, *trackT0Assn);
+
+
+          anaTree->Fill();
+
+          isPass = true;
         }
-
-        util::CreateAssn(*this, e, trackForCollectionPtr, calorimetryPtrCollection, *trackCalorimetryAssn); 
-
-        std::vector< art::Ptr<recob::Hit> >hitPtrCollection;
-
-        // now get hit information for creating the associations
-        for (size_t iH = 0; iH < theseHits.size(); iH++){
-          hitCollection->push_back(*((theseHits.at(iH)).get()));
-          art::Ptr<recob::Hit> hitForCollectionPtr = makeHitPtr(hitCollection->size() -1);
-          hitPtrCollection.push_back(hitForCollectionPtr);
-
-          if (spacePointFromHits.at((theseHits.at(iH)).key()).size() != 0){
-            art::Ptr<recob::SpacePoint> thisSpacePoint = spacePointFromHits.at((theseHits.at(iH)).key()).at(0);
-
-            spacePointCollection->push_back(*(thisSpacePoint.get()));
-            art::Ptr<recob::SpacePoint> spacePointForCollectionPtr = makeSpacePointPtr(spacePointCollection->size() -1);
-
-            // need to create a 1-to-1 assciation for spacepoints to hits
-            util::CreateAssn(*this, e, spacePointForCollectionPtr, hitForCollectionPtr, *hitSpacePointAssn); 
-          }
-        }
-
-        util::CreateAssn(*this, e, trackForCollectionPtr, pfpForCollectionPtr  , *pfpTrackAssn);
-        util::CreateAssn(*this, e, trackForCollectionPtr, hitPtrCollection     , *trackHitAssn);
-        util::CreateAssn(*this, e, t0ForCollectionPtr   , trackForCollectionPtr, *trackT0Assn);
-
-
-        anaTree->Fill();
-
-        isPass = true;
       }
     }
-
   }
 
   // now put data products in the event
@@ -490,21 +592,21 @@ bool pdsp::StoppingMuFilter::filter(art::Event& e)
 void pdsp::StoppingMuFilter::beginJob()
 {  
   trackStartXZAllTracks = tfs->make<TH2D>("trackStartXZAllTracks", 
-                                          ";Track Start Z (cm);Track Start X (cm)", 
-                                          100, -100, 800, 100, -450, 450);
+      ";Track Start Z (cm);Track Start X (cm)", 
+      100, -100, 800, 100, -450, 450);
 
   trackEndXZAllTracks   = tfs->make<TH2D>("trackEndXZAllTracks", 
-                                          ";Track End Z (cm);Track End X (cm)", 
-                                          100, -100, 800, 100, -450, 450);
+      ";Track End Z (cm);Track End X (cm)", 
+      100, -100, 800, 100, -450, 450);
 
   trackStartYZAllTracks = tfs->make<TH2D>("trackStartYZAllTracks", 
-                                          ";Track Start Z (cm);Track Start Y (cm)", 
-                                          100, -100, 800, 100, -100, 800);
+      ";Track Start Z (cm);Track Start Y (cm)", 
+      100, -100, 800, 100, -100, 800);
 
   trackEndYZAllTracks   = tfs->make<TH2D>("trackEndYZAllTracks", 
-                                          ";Track End Z (cm);Track End Y (cm)", 
-                                          100, -100, 800, 100, -100, 800);
-  
+      ";Track End Z (cm);Track End Y (cm)", 
+      100, -100, 800, 100, -100, 800);
+
   anaTree = tfs->make<TTree>("analysis_tree" , "analysis tree");
   anaTree->Branch("run"                      , &run);
   anaTree->Branch("subRun"                   , &subRun);
@@ -526,14 +628,59 @@ void pdsp::StoppingMuFilter::beginJob()
   anaTree->Branch("trackMinDistLen"          , "std::vector< std::vector< double > >" , &trackMinDistLen);
   anaTree->Branch("trackMinDistAngle"        , "std::vector< std::vector< double > >" , &trackMinDistAngle);
   anaTree->Branch("trackdEdxByHitPlane0"     , "std::vector< std::vector< float > >"  , &trackdEdxByHitPlane0);
+  anaTree->Branch("trackdQdxByHitPlane0uncal", "std::vector< std::vector< float > >"  , &trackdQdxByHitPlane0uncal);
   anaTree->Branch("trackdQdxByHitPlane0"     , "std::vector< std::vector< float > >"  , &trackdQdxByHitPlane0);
   anaTree->Branch("trackResRangeByHitPlane0" , "std::vector< std::vector< float > >"  , &trackResRangeByHitPlane0);
   anaTree->Branch("trackdEdxByHitPlane1"     , "std::vector< std::vector< float > >"  , &trackdEdxByHitPlane1);
+  anaTree->Branch("trackdQdxByHitPlane1uncal", "std::vector< std::vector< float > >"  , &trackdQdxByHitPlane1uncal);
   anaTree->Branch("trackdQdxByHitPlane1"     , "std::vector< std::vector< float > >"  , &trackdQdxByHitPlane1);
   anaTree->Branch("trackResRangeByHitPlane1" , "std::vector< std::vector< float > >"  , &trackResRangeByHitPlane1);
   anaTree->Branch("trackdEdxByHitPlane2"     , "std::vector< std::vector< float > >"  , &trackdEdxByHitPlane2);
+  anaTree->Branch("trackdQdxByHitPlane2uncal", "std::vector< std::vector< float > >"  , &trackdQdxByHitPlane2uncal);
   anaTree->Branch("trackdQdxByHitPlane2"     , "std::vector< std::vector< float > >"  , &trackdQdxByHitPlane2);
   anaTree->Branch("trackResRangeByHitPlane2" , "std::vector< std::vector< float > >"  , &trackResRangeByHitPlane2);
+
+  std::string efieldPath;
+  cet::search_path sp("FW_SEARCH_PATH");
+  if(!sp.find_file("stoppingmuonfilter/data/SCE_DataDriven_180kV_v3.root", efieldPath)){
+    throw cet::exception("FileError")
+      << "Cannot find E Field File "
+      << " bail ungracefully\n\n"
+      << __FILE__ << ":" << __LINE__;
+  }
+  
+  EField = new TFile((efieldPath).c_str(), "read");
+  xneg =(TH3F*)EField->Get("Reco_ElecField_X_Neg");
+  yneg =(TH3F*)EField->Get("Reco_ElecField_Y_Neg");
+  zneg =(TH3F*)EField->Get("Reco_ElecField_Z_Neg");
+  xpos =(TH3F*)EField->Get("Reco_ElecField_X_Pos");
+  ypos =(TH3F*)EField->Get("Reco_ElecField_Y_Pos");
+  zpos =(TH3F*)EField->Get("Reco_ElecField_Z_Pos");
+
+}
+
+double pdsp::StoppingMuFilter::calcEField(float xval, float yval, float zval){
+ 
+  float E0value=0.4867;
+  if(xval>=0){
+    float ex=E0value+E0value*xpos->GetBinContent(xpos->FindBin(xval,yval,zval));
+    float ey=E0value*ypos->GetBinContent(ypos->FindBin(xval,yval,zval));
+    float ez=E0value*zpos->GetBinContent(zpos->FindBin(xval,yval,zval));
+    return sqrt(ex*ex+ey*ey+ez*ez);
+  }
+  if(xval<0){
+    float ex=E0value+E0value*xneg->GetBinContent(xneg->FindBin(xval,yval,zval));
+    float ey=E0value*yneg->GetBinContent(yneg->FindBin(xval,yval,zval));
+    float ez=E0value*zneg->GetBinContent(zneg->FindBin(xval,yval,zval));
+    return sqrt(ex*ex+ey*ey+ez*ez);
+  }
+  else return E0value;
+}
+
+double pdsp::StoppingMuFilter::getModBoxdEdX(float dqdx, float efield){
+  //double dedx = (std::exp(dqdx*(betap/(rho*efield)*wion))-alpha)/(betap/(rho*efield));
+  double dedx = (exp(dqdx*(betap/(rho*efield)*wion))-alpha)/(betap/(rho*efield));
+  return dedx;
 }
 
 void pdsp::StoppingMuFilter::clearVectors()
@@ -551,25 +698,85 @@ void pdsp::StoppingMuFilter::clearVectors()
   trackZenith              ->resize(0);
   trackThetaXZ             ->resize(0);
   trackThetaYZ             ->resize(0);
-  std::cout << "cleared to trackThetaYZ" << std::endl;
   trackHitMinPeakTime      ->resize(0);
   trackMinDistLen          ->resize(0);
   trackMinDistAngle        ->resize(0);
-  std::cout << "cleared to trackMinDistAngle" << std::endl;
   trackdEdxByHitPlane0     ->resize(0);
+  trackdQdxByHitPlane0uncal->resize(0);
   trackdQdxByHitPlane0     ->resize(0);
   trackResRangeByHitPlane0 ->resize(0);
-  std::cout << "cleared to Plane0" << std::endl;
-
   trackdEdxByHitPlane1     ->resize(0);
   trackdQdxByHitPlane1     ->resize(0);
   trackResRangeByHitPlane1 ->resize(0);
-  std::cout << "cleared to Plane1" << std::endl;
   trackdEdxByHitPlane2     ->resize(0);
   trackdQdxByHitPlane2     ->resize(0);
   trackResRangeByHitPlane2 ->resize(0);
-  std::cout << "cleared to Plane2" << std::endl;
-
 }
+
+bool pdsp::StoppingMuFilter::beginRun(art::Run& r)
+{
+
+  int run = r.run();
+
+  if (run == 5387){
+    calibPars.calibFactor         = 5.23e-3;
+    calibPars.normalisationFactor = 0.9946;
+    calibPars.yzCorrFactorLoc     = "stoppingmuonfilter/data/YZcalo_r5387.root";
+    calibPars.xCorrFactorLoc      = "stoppingmuonfilter/data/Xcalo_r5387.root";
+  }
+  else if (run == 5770){
+    calibPars.calibFactor         = 5.59e-3;
+    calibPars.normalisationFactor = 1.1334;
+    calibPars.yzCorrFactorLoc     = "stoppingmuonfilter/data/YZcalo_r5770.root";
+    calibPars.xCorrFactorLoc      = "stoppingmuonfilter/data/Xcalo_r5770.root";
+  }
+  else if (run == 5809){
+    calibPars.calibFactor         = 5.58e-3;
+    calibPars.normalisationFactor = 1.0469;
+    calibPars.yzCorrFactorLoc     = "stoppingmuonfilter/data/YZcalo_r5809.root";
+    calibPars.xCorrFactorLoc      = "stoppingmuonfilter/data/Xcalo_r5809.root";
+  }
+  else{
+    calibPars.calibFactor         = -1;
+    calibPars.normalisationFactor = -1;
+    calibPars.yzCorrFactorLoc     = "noLocation";
+    calibPars.xCorrFactorLoc      = "noLocation";
+  }
+
+  if (calibPars.calibFactor != -1){
+    std::string yzPath;
+    std::string xPath;
+    cet::search_path sp("FW_SEARCH_PATH");
+    if(!sp.find_file(calibPars.yzCorrFactorLoc, yzPath)){
+      throw cet::exception("FileError")
+        << "Cannot find YZ calibration file "
+        << " bail ungracefully\n\n"
+        << __FILE__ << ":" << __LINE__;
+    }
+    if(!sp.find_file(calibPars.xCorrFactorLoc, xPath)){
+      throw cet::exception("FileError")
+        << "Cannot find X calibration file "
+        << " bail ungracefully\n\n"
+        << __FILE__ << ":" << __LINE__;
+    }
+
+    YZFile = new TFile((yzPath).c_str(), "read");
+    XFile  = new TFile((xPath).c_str(), "read");
+    YZNegHist = (TH2F*)YZFile->Get("correction_dqdx_ZvsY_negativeX_hist_2");
+    YZPosHist = (TH2F*)YZFile->Get("correction_dqdx_ZvsY_positiveX_hist_2");
+    XHist     = (TH1F*)XFile ->Get("dqdx_X_correction_hist_2");
+  }
+
+  MF_LOG_VERBATIM("beginRun")
+    << "started run " << run
+    << "\nupdating calibration factors to"
+    << "\n-- calibration factor    : " << calibPars.calibFactor
+    << "\n-- normalisation factor  : " << calibPars.normalisationFactor
+    << "\n-- yz correction location: " << calibPars.yzCorrFactorLoc
+    << "\n-- x correction location : " << calibPars.xCorrFactorLoc;
+
+  return true;
+}
+
 
 DEFINE_ART_MODULE(pdsp::StoppingMuFilter)
