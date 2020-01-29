@@ -26,7 +26,7 @@
     <larsoft>
       <tag>&release;</tag>
       <qual>e17:prof</qual>
-      <local>/pnfs/dune/resilient/users/alister1/dunetpc_v08_35_00.tar</local>
+      <local>/pnfs/dune/resilient/users/alister1/dunetpc_08_35_00.tar</local>
     </larsoft>
 
     <!-- filter -->
@@ -37,7 +37,7 @@
       <workdir>&resilient_dir;&name;</workdir>
       <outdir>&scratch_dir;</outdir>
       <logdir>&scratch_dir;</logdir>
-      <numjobs>10</numjobs>
+      <numjobs>1000</numjobs>
       <numevents>1000</numevents>
       <maxfilesperjob>10</maxfilesperjob>
       <memory>8000</memory>
