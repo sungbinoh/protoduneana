@@ -8,6 +8,7 @@
 #include "canvas/Persistency/Common/FindManyP.h"
 #include "dune/DuneObj/ProtoDUNEBeamEvent.h"
 #include "protoduneana/Utilities/ProtoDUNETruthUtils.h"
+#include "protoduneana/protoduneana/Utilities/ProtoDUNECalibration.h"
 
 #include "TFile.h"
 #include "TH1F.h"
@@ -146,7 +147,7 @@ std::vector< float >  protoana::ProtoDUNETrackUtils::CalibrateCalorimetry(  cons
   std::string X_correction_name = ps.get< std::string >( "X_correction" );
   TFile X_correction_file = TFile( X_correction_name.c_str(), "OPEN" );
   TH1F * X_correction_hist = NULL;
-
+  
   bool UseNewVersion = ps.get< bool >( "UseNewVersion", false );
   if( UseNewVersion ){
     std::string hist_name = "dqdx_X_correction_hist_" + std::to_string(planeID);
@@ -162,7 +163,7 @@ std::vector< float >  protoana::ProtoDUNETrackUtils::CalibrateCalorimetry(  cons
 
   //Get the Calorimetry vector from the track
   std::vector< anab::Calorimetry > caloVector = GetRecoTrackCalorimetry( track, evt, trackModule, caloModule ); 
-  
+ 
   size_t calo_position;
   bool found_plane = false;
   for( size_t i = 0; i < caloVector.size(); ++i ){
@@ -240,7 +241,7 @@ std::vector<anab::ParticleID> protoana::ProtoDUNETrackUtils::GetRecoTrackPID(con
 
 }
 
-protoana::BrokenTrack protoana::ProtoDUNETrackUtils::IsBrokenTrack( const recob::Track &track, art::Event const &evt, const std::string trackModule, const std::string caloModule, const fhicl::ParameterSet & BrokenTrackPars, const fhicl::ParameterSet & CalorimetryPars ){
+protoana::BrokenTrack protoana::ProtoDUNETrackUtils::IsBrokenTrack( const recob::Track &track, art::Event const &evt, const std::string trackModule, const std::string caloModule, const fhicl::ParameterSet & BrokenTrackPars, const fhicl::ParameterSet & CalibrationPars ){
   
   BrokenTrack theBrokenTrack;
   theBrokenTrack.Valid = false;
@@ -279,10 +280,10 @@ protoana::BrokenTrack protoana::ProtoDUNETrackUtils::IsBrokenTrack( const recob:
           //Get the cosine of the angle between them
           auto stitchDir = tr.StartDirection();
           double stitch_cos_theta =  stitchDir.X()*track.EndDirection().X() + stitchDir.Y()*track.EndDirection().Y() + stitchDir.Z()*track.EndDirection().Z() ;
-          std::cout << "Cos_theta " << stitch_cos_theta << std::endl;
+         
 
 
-          unsigned int planeID = CalorimetryPars.get< unsigned int >( "PlaneID");
+          unsigned int planeID = CalibrationPars.get< unsigned int >( "PlaneID");
           //Get the calorimetries, calibrate, and combine
           std::vector< anab::Calorimetry > broken_calos = GetRecoTrackCalorimetry(track, evt, trackModule, caloModule);
 
@@ -302,8 +303,9 @@ protoana::BrokenTrack protoana::ProtoDUNETrackUtils::IsBrokenTrack( const recob:
 
           auto broken_range = broken_calos.at( calo_position ).ResidualRange();
           auto broken_dQdx  = broken_calos.at( calo_position ).dQdx();
-          std::vector< float > broken_cal_dEdx = CalibrateCalorimetry(  track, evt, trackModule, caloModule, CalorimetryPars );
-
+          // std::vector< float > broken_cal_dEdx = CalibrateCalorimetry(  track, evt, trackModule, caloModule, CalorimetryPars );
+          protoana::ProtoDUNECalibration calibration = protoana::ProtoDUNECalibration(CalibrationPars ); // fCalibrationPars
+          std::vector< float > broken_cal_dEdx=calibration.GetCalibratedCalorimetry(track, evt, trackModule, caloModule );
           calo_position = 0;
           std::vector< anab::Calorimetry > stitch_calos = GetRecoTrackCalorimetry(tr, evt, trackModule, caloModule);
 
@@ -322,8 +324,8 @@ protoana::BrokenTrack protoana::ProtoDUNETrackUtils::IsBrokenTrack( const recob:
 
           auto stitch_range = stitch_calos.at( calo_position ).ResidualRange();
           auto stitch_dQdx  = stitch_calos.at( calo_position ).dQdx();
-          std::vector< float > stitch_cal_dEdx = CalibrateCalorimetry(  tr, evt, trackModule, caloModule, CalorimetryPars );
-
+          std::vector< float > stitch_cal_dEdx = calibration.GetCalibratedCalorimetry(tr, evt, trackModule, caloModule );
+          
           //piece them together in order       
           std::vector< float > combined_range, combined_dQdx, combined_dEdx;
           
@@ -342,14 +344,17 @@ protoana::BrokenTrack protoana::ProtoDUNETrackUtils::IsBrokenTrack( const recob:
             }
           }
 
-          for( size_t i = 0; i < combined_range.size(); ++i ){
-            std::cout << combined_range[i] << std::endl;
-          }
+          // for( size_t i = 0; i < combined_range.size(); ++i ){
+          //   std::cout << combined_range[i] << std::endl;
+          // }
 
           combined_dQdx = stitch_dQdx;
           combined_dQdx.insert( combined_dQdx.end(), broken_dQdx.begin(), broken_dQdx.end() );
           combined_dEdx = stitch_cal_dEdx;
           combined_dEdx.insert( combined_dEdx.end(), broken_cal_dEdx.begin(), broken_cal_dEdx.end() );
+
+
+          
 /*          float total_stitch_range;
           if( stitch_range[0] > stitch_range.back() ){
             total_stitch_range = stitch_range[0]; 

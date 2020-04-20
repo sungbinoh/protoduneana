@@ -80,12 +80,18 @@ std::vector< float >  protoana::ProtoDUNECalibration::GetCalibratedCalorimetry( 
 
   //Do Ajib's correction 
   for( size_t i = 0; i < dQdX.size(); ++i ){ 
+    
     float hit_x = theXYZPoints[i].X();
+    
     float hit_y = theXYZPoints[i].Y();
+    
+    
     float hit_z = theXYZPoints[i].Z();
+    
 
-    if( hit_y < 0. || hit_y > 600. ) continue;
-    if( hit_z < 0. || hit_z > 695. ) continue;
+    // if( hit_y < 0. || hit_y > 600. ) continue;  These break the 1-1 corrspondance between res range and dedx
+    // if( hit_z < 0. || hit_z > 695. ) continue;  We may well not want these hits, but would have to remove at same time as res range
+    if( hit_z < 0.) hit_z=0; //based on convo with Jake and Ajib maps dont go below z=0
 
 
     int X_bin = X_correction_hist->FindBin( hit_x );

@@ -1,0 +1,682 @@
+////////////////////////////////////////////////////////////////////////
+// Class:       PionAna
+// Plugin Type: analyzer (art v2_07_03)
+// File:        PionAna_module.cc
+//
+// Generated at Mon Sep  4 06:55:33 2017 by Leigh Whitehead using cetskelgen
+// from cetlib version v3_00_01.
+//
+// This module is designed to show some usage examples of the analysis
+// tools that I have been producing for protoDUNE. The aim has been to
+// simplify the associations between the different objects to make
+// some of the low-level art features more transparent
+//
+// The code is split into a few sections with each focusing on a different
+// type of initial object
+//
+////////////////////////////////////////////////////////////////////////
+
+#include "art/Framework/Core/EDAnalyzer.h"
+#include "art/Framework/Core/ModuleMacros.h"
+#include "art/Framework/Principal/Event.h"
+#include "art/Framework/Principal/Handle.h"
+#include "art/Framework/Principal/Run.h"
+#include "art/Framework/Principal/SubRun.h"
+#include "art/Framework/Services/Optional/TFileService.h"
+#include "canvas/Utilities/InputTag.h"
+#include "canvas/Persistency/Common/FindManyP.h"
+#include "fhiclcpp/ParameterSet.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
+
+#include "larsim/MCCheater/BackTrackerService.h"
+#include "larsim/MCCheater/ParticleInventoryService.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Track.h"
+#include "lardataobj/RecoBase/Shower.h"
+#include "lardataobj/RecoBase/PFParticle.h"
+#include "nusimdata/SimulationBase/MCParticle.h"
+#include "nusimdata/SimulationBase/MCTruth.h"
+#include "lardataobj/AnalysisBase/CosmicTag.h"
+#include "lardataobj/AnalysisBase/T0.h"
+
+#include "dune/Protodune/Analysis/ProtoDUNETrackUtils.h"
+#include "dune/Protodune/Analysis/ProtoDUNEShowerUtils.h"
+#include "dune/Protodune/Analysis/ProtoDUNETruthUtils.h"
+#include "dune/Protodune/Analysis/ProtoDUNEPFParticleUtils.h"
+#include "dune/Protodune/Analysis/ProtoDUNEDataUtils.h"
+
+ #include "dune/DuneObj/ProtoDUNEBeamEvent.h"
+
+#include "larevt/SpaceChargeServices/SpaceChargeService.h"
+
+#include "lardataobj/AnalysisBase/Calorimetry.h"
+
+
+// ROOT includes
+#include "TTree.h"
+#include "TFile.h"
+#include "TString.h"
+#include "TH1.h"
+#include "TLorentzVector.h" 
+
+
+namespace protoana {
+  class PionAna;
+}
+
+
+class protoana::PionAna : public art::EDAnalyzer {
+public:
+
+  explicit PionAna(fhicl::ParameterSet const & p);
+  // The compiler-generated destructor is fine for non-base
+  // classes without bare pointers or other resource use.
+
+  // Plugins should not be copied or assigned.
+  PionAna(PionAna const &) = delete;
+  PionAna(PionAna &&) = delete;
+  PionAna & operator = (PionAna const &) = delete;
+  PionAna & operator = (PionAna &&) = delete;
+
+  virtual void beginJob() override;
+  virtual void endJob() override;
+
+  const art::Ptr<simb::MCParticle> getParticle(int TrackID,art::Event const & evt) const;
+
+  // Required functions.
+  void analyze(art::Event const & e) override;
+
+
+
+
+private:
+  
+  
+
+  // fcl parameters
+  std::string fCalorimetryTag;
+  std::string fTrackerTag;
+  std::string fShowerTag;
+  std::string fPFParticleTag;
+  std::string fGeneratorTag;
+  std::string fBeamModuleLabel;
+  std::string fMCParticleTag;
+  bool fVerbose;
+
+
+
+//shared varibles
+
+  int fEvent;        ///< number of the event being processed
+  int fRun;          ///< number of the run being processed
+  int fSubRun;       ///< number of the sub-run being processed
+  int fNumDaughters; //
+  int fNumBeamParticles;
+  
+
+
+  std::vector<double> fprimtrk_dqdx;  //removed outside vector as I only take one TPC track per event, need to emsure this is the case
+  std::vector<double> fprimtrk_resrange;
+  std::vector<double> fprimtrk_dedx;
+  std::vector<TVector3> fprimtrk_hitpos;
+  std::vector<double> fprimtrk_pitch;
+  double fprimtrk_calorange; //track range from calo module. Does this match normal range?
+  
+
+
+
+
+
+  TVector3 fTrack_Start;
+  TVector3 fTrack_StartDir;
+  TVector3 fTrack_End;
+  TVector3 fTrack_EndDir;
+  TVector3 fvtx;
+  TVector3 finteractionvtx;
+
+
+
+  int fBeamParticlePDG; //211 for track, 11 for shower
+  char fBeamParticleType; //Track like or showerlike
+  float fTrack_pathlen;
+
+  
+
+
+  //Data only variobes
+
+  std::vector<TVector3> fBeamEndPoints_BL;
+  std::vector<TVector3> fBeamStartPoints_BL;
+  std::vector<TVector3> fBeamDirectionStart_BL;
+  int fNumParticles_BL; //BL -- beam line
+
+  double fTOF_BL;
+  std::vector<double> fMomentum_BL;
+
+  
+
+ 
+
+
+  //MC only varibles
+  int fBeamParticlePDG_MCP;
+  int fBeamParticleNumDaughters_MCP;
+
+  TVector3 fBeamParticleStart_MCP;
+  TVector3 fBeamParticleStartMom_MCP;
+  TVector3 fBeamParticleEnd_MCP;
+  TVector3 fBeamParticleEndMom_MCP;
+
+  std::string fBeamParticleEndProc_MCP;
+
+
+
+  std::vector<int> fDaughterParticlePDG_MCP;
+  std::vector<int> fDaughterParticleNumDaughters_MCP;
+
+  std::vector<TVector3> fDaughterParticleStart_MCP;
+  std::vector<TVector3> fDaughterParticleStartMom_MCP;
+  std::vector<TVector3> fDaughterParticleEnd_MCP;
+  std::vector<TVector3> fDaughterParticleEndMom_MCP;
+
+  std::vector<std::string> fDaughterParticleEndProc_MCP;
+
+  bool fRecoTrackIsBeam_MCP;
+
+
+
+  TH1D* NumDaughters_hist;     
+  TH1D* X_start;
+  TH1D* NumBeamParticles;       
+
+  TTree* EvtTree;     ///< tuple for each event
+  TTree* CandidateTree; // tuple just for track like particles found
+
+
+  protoana::ProtoDUNEDataUtils dataUtil;
+
+};
+
+
+protoana::PionAna::PionAna(fhicl::ParameterSet const & p)
+  :
+  EDAnalyzer(p),
+  fCalorimetryTag(p.get<std::string>("CalorimetryTag")),
+  fTrackerTag(p.get<std::string>("TrackerTag")),
+  fShowerTag(p.get<std::string>("ShowerTag")),
+  fPFParticleTag(p.get<std::string>("PFParticleTag")),
+  fGeneratorTag(p.get<std::string>("GeneratorTag")),
+  fBeamModuleLabel(p.get<std::string>("BeamModuleLabel")),
+  fMCParticleTag(p.get<std::string>("MCParticleTag")),
+  fVerbose(p.get<bool>("Verbose")),
+  dataUtil(p.get<fhicl::ParameterSet>("DataUtils"))
+{
+
+}
+
+void protoana::PionAna::beginJob()
+{
+
+  art::ServiceHandle<art::TFileService> tfs;
+  NumDaughters_hist     = tfs->make<TH1D>("NumDaughters",";NumDaughters",  10, 0, 10);
+  NumBeamParticles     = tfs->make<TH1D>("NumBeamParticles",";NumBeamParticles",10, 0, 10);
+
+  
+  // Define our n-tuples, which are limited forms of ROOT
+  // TTrees. Start with the TTree itself.
+  EvtTree    = tfs->make<TTree>("EvtTree",    "EvtTree");
+  
+  // Define the branches (columns) of our simulation n-tuple. To
+  // write a variable, we give the address of the variable to
+  // TTree::Branch.
+  EvtTree->Branch("Event",       &fEvent,          "Event/I");
+  EvtTree->Branch("SubRun",      &fSubRun,         "SubRun/I");
+  EvtTree->Branch("Run",         &fRun,            "Run/I");
+  EvtTree->Branch("NumBeamParticles",     &fNumBeamParticles,     "NumBeamParticles/I");
+
+  EvtTree->Branch("NumDaughters",     &fNumDaughters,     "NumDaughters/I");
+  EvtTree->Branch("BeamParticlePDG", &fBeamParticlePDG, "BeamParticlePDG/I");
+  EvtTree->Branch("ParticleType",     &fBeamParticleType);
+  EvtTree->Branch("NumParticles_BL", &fNumParticles_BL, "NumParticles_BL/I");
+  EvtTree->Branch("vtx", &fvtx);
+  EvtTree->Branch("BeamParticlePDG_MCP", &fBeamParticlePDG_MCP, "BeamParticlePDG_MCP/I");
+  EvtTree->Branch("BeamParticleStart_MCP", &fBeamParticleStart_MCP);
+  EvtTree->Branch("BeamParticleStartMom_MCP", &fBeamParticleStartMom_MCP);
+  EvtTree->Branch("BeamParticleEnd_MCP", &fBeamParticleEnd_MCP);
+  EvtTree->Branch("BeamParticleEndMom_MCP", &fBeamParticleStartMom_MCP);
+  EvtTree->Branch("BeamParticleNumDaughters_MCP", &fBeamParticleNumDaughters_MCP);
+  EvtTree->Branch("BeamParticleEndProc_MCP", &fBeamParticleEndProc_MCP);
+
+  EvtTree->Branch("DaughterParticlePDG_MCP", &fDaughterParticlePDG_MCP);
+  EvtTree->Branch("DaughterParticleStart_MCP", &fDaughterParticleStart_MCP);
+  EvtTree->Branch("DaughterParticleStartMom_MCP", &fDaughterParticleStartMom_MCP);
+  EvtTree->Branch("DaughterParticleEnd_MCP", &fDaughterParticleEnd_MCP);
+  EvtTree->Branch("DaughterParticleEndMom_MCP", &fDaughterParticleStartMom_MCP);
+  EvtTree->Branch("DaughterParticleNumDaughters_MCP", &fDaughterParticleNumDaughters_MCP);
+  EvtTree->Branch("DaughterParticleEndProc_MCP", &fDaughterParticleEndProc_MCP);
+  
+
+  CandidateTree = tfs->make<TTree>("CandidateTree", "CandidateTree");
+
+
+  CandidateTree->Branch("Event",       &fEvent,          "Event/I");
+  CandidateTree->Branch("SubRun",      &fSubRun,         "SubRun/I");
+  CandidateTree->Branch("Run",         &fRun,            "Run/I");
+
+  CandidateTree->Branch("NumDaughters",     &fNumDaughters,     "NumDaughters/I");
+  CandidateTree->Branch("BeamParticlePDG", &fBeamParticlePDG, "BeamParticlePDG/I");
+  CandidateTree->Branch("ParticleType",     &fBeamParticleType);
+  CandidateTree->Branch("Track_pathlen", &fTrack_pathlen, "Track_pathlen/F");
+  
+  CandidateTree->Branch("vtx", &fvtx);
+  CandidateTree->Branch("interactionvtx", &finteractionvtx);
+  CandidateTree->Branch("Track_Start", &fTrack_Start);
+  CandidateTree->Branch("Track_End", &fTrack_End);
+  CandidateTree->Branch("Track_StartDir", &fTrack_StartDir);
+  CandidateTree->Branch("Track_EndDir", &fTrack_EndDir);
+
+  ///calo
+  
+  CandidateTree->Branch("primtrk_dqdx", &fprimtrk_dqdx);
+  CandidateTree->Branch("primtrk_dedx", &fprimtrk_dedx);
+  CandidateTree->Branch("primtrk_calorange", &fprimtrk_calorange);
+  CandidateTree->Branch("primtrk_resrange", &fprimtrk_resrange);
+  CandidateTree->Branch("primtrk_pitch", &fprimtrk_pitch);
+  CandidateTree->Branch("primtrk_hitpos", &fprimtrk_hitpos);
+
+  CandidateTree->Branch("TOF_BL", &fTOF_BL);
+  CandidateTree->Branch("Momentum_BL", &fMomentum_BL);
+  CandidateTree->Branch("BeamEndPoints_BL", &fBeamEndPoints_BL);
+  CandidateTree->Branch("BeamStartPoints_BL", &fBeamEndPoints_BL);
+  CandidateTree->Branch("BeamDirectionStart_BL", &fBeamDirectionStart_BL);
+  CandidateTree->Branch("NumParticles_BL", &fNumParticles_BL, "NumParticles_BL/I");
+
+
+  CandidateTree->Branch("BeamParticlePDG_MCP", &fBeamParticlePDG_MCP, "BeamParticlePDG_MCP/I");
+  CandidateTree->Branch("BeamParticleStart_MCP", &fBeamParticleStart_MCP);
+  CandidateTree->Branch("BeamParticleStartMom_MCP", &fBeamParticleStartMom_MCP);
+  CandidateTree->Branch("BeamParticleEnd_MCP", &fBeamParticleEnd_MCP);
+  CandidateTree->Branch("BeamParticleEndMom_MCP", &fBeamParticleStartMom_MCP);
+  CandidateTree->Branch("BeamParticleNumDaughters_MCP", &fBeamParticleNumDaughters_MCP);
+  CandidateTree->Branch("BeamParticleEndProc_MCP", &fBeamParticleEndProc_MCP);
+
+  CandidateTree->Branch("RecoTrackIsBeam_MCP", &fRecoTrackIsBeam_MCP);
+
+
+  CandidateTree->Branch("DaughterParticlePDG_MCP", &fDaughterParticlePDG_MCP);
+  CandidateTree->Branch("DaughterParticleStart_MCP", &fDaughterParticleStart_MCP);
+  CandidateTree->Branch("DaughterParticleStartMom_MCP", &fDaughterParticleStartMom_MCP);
+  CandidateTree->Branch("DaughterParticleEnd_MCP", &fDaughterParticleEnd_MCP);
+  CandidateTree->Branch("DaughterParticleEndMom_MCP", &fDaughterParticleStartMom_MCP);
+  CandidateTree->Branch("DaughterParticleNumDaughters_MCP", &fDaughterParticleNumDaughters_MCP);
+  CandidateTree->Branch("DaughterParticleEndProc_MCP", &fDaughterParticleEndProc_MCP);
+ // CandidateTree->Branch("BestAng", &fBestAng, "BestAng/F");
+
+
+}
+
+
+const art::Ptr<simb::MCParticle> protoana::PionAna::getParticle(int TrackID,art::Event const & evt) const
+{
+
+  std::vector<art::Ptr<simb::MCParticle> > allParticlePtrs;
+  auto allParticlesHandle = evt.getValidHandle<std::vector<simb::MCParticle> >(fMCParticleTag);
+  art::fill_ptr_vector(allParticlePtrs, allParticlesHandle);
+  
+  std::cout<<"test033"<<std::endl;
+  art::Ptr<simb::MCParticle> result;
+  std::cout<<"test034"<<std::endl;
+  for( auto const & mcPart: allParticlePtrs)
+  { 
+      std::cout<<mcPart<<std::endl;
+      std::cout<<*mcPart<<std::endl;
+   //if(*mcPart){
+      std::cout<<"test035"<<std::endl;
+      std::cout<<TrackID<<std::endl;
+      const int partTrackID = mcPart->TrackId();
+      std::cout<<partTrackID<<std::endl;
+      if (TrackID == partTrackID)
+      {
+        std::cout<<"test036"<<std::endl;
+        result = mcPart;
+        break;
+      }
+      std::cout<<"test037"<<std::endl;
+   // }//mcPart should exist but doesnt seem to alaways
+  }
+  std::cout<<"test038"<<std::endl;
+  return result;
+}
+
+
+
+
+void protoana::PionAna::analyze(art::Event const & evt)
+{
+
+
+
+
+  fEvent  = evt.id().event(); 
+  fRun    = evt.run();
+  fSubRun = evt.subRun();
+
+
+  bool beamTriggerEvent = false;
+  // If this event is MC then we can check what the true beam particle is
+  if(!evt.isRealData()){
+    // Get the truth utility to help us out
+    protoana::ProtoDUNETruthUtils truthUtil;
+    // Firstly we need to get the list of MCTruth objects from the generator. The standard protoDUNE
+    // simulation has fGeneratorTag = "generator"
+    auto mcTruths = evt.getValidHandle<std::vector<simb::MCTruth>>(fGeneratorTag);
+    // mcTruths is basically a pointer to an std::vector of simb::MCTruth objects. There should only be one
+    // of these, so we pass the first element into the function to get the good particle
+    const simb::MCParticle* geantGoodParticle = truthUtil.GetGeantGoodParticle((*mcTruths)[0],evt);
+
+
+
+    if(geantGoodParticle != 0x0){
+      std::cout << "Found GEANT particle corresponding to the good particle with pdg = " << geantGoodParticle->PdgCode() << std::endl;
+      std::cout<<"test01"<<std::endl;
+      fBeamParticlePDG_MCP=geantGoodParticle->PdgCode();
+      fBeamParticleNumDaughters_MCP=geantGoodParticle->NumberDaughters();
+      fBeamParticleStart_MCP=geantGoodParticle->Position(0).Vect();  //.Vect as i cant store TlorentzVector in std::vectpr
+      fBeamParticleStartMom_MCP=geantGoodParticle->Momentum(0).Vect();
+      fBeamParticleEnd_MCP=geantGoodParticle->EndPosition().Vect();
+      fBeamParticleEndMom_MCP=geantGoodParticle->EndMomentum().Vect();
+      std::cout<<"test02"<<std::endl;
+      fBeamParticleEndProc_MCP=geantGoodParticle->EndProcess();
+
+      //largeant
+
+
+      int nDaughters = geantGoodParticle->NumberDaughters();
+      std::cout<<nDaughters<<std::endl;
+      std::cout<<"test03"<<std::endl;
+      for(int iDaughter=0; iDaughter < nDaughters; iDaughter++){
+        std::cout<<"test031"<<std::endl;
+        const int daughterID = geantGoodParticle->Daughter(iDaughter);
+        std::cout<<daughterID<<std::endl;
+        std::cout<<"test032"<<std::endl;
+        art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
+        const simb::MCParticle* Daughter = pi_serv->TrackIdToParticle_P(daughterID);
+        //auto Daughter=getParticle(daughterID,evt);
+        std::cout<<"test04"<<std::endl;
+        fDaughterParticlePDG_MCP.push_back(Daughter->PdgCode());
+        fDaughterParticleNumDaughters_MCP.push_back(Daughter->NumberDaughters());
+        fDaughterParticleStart_MCP.push_back(Daughter->Position(0).Vect());
+        fDaughterParticleStartMom_MCP.push_back(Daughter->Momentum(0).Vect());
+        fDaughterParticleEnd_MCP.push_back(Daughter->EndPosition().Vect());
+        fDaughterParticleEndMom_MCP.push_back(Daughter->EndMomentum().Vect());
+
+        fDaughterParticleEndProc_MCP.push_back(Daughter->EndProcess());
+        std::cout<<"test05"<<std::endl;
+        }
+      }//if geant particle exists
+  }//is real data
+  else{
+    // For data we can see if this event comes from a beam trigger
+    beamTriggerEvent = dataUtil.IsBeamTrigger(evt);
+    if(beamTriggerEvent){
+      std::cout << "This data event has a beam trigger" << std::endl;
+    }
+
+
+      art::Handle< std::vector<beam::ProtoDUNEBeamEvent> > pdbeamHandle;
+      std::vector< art::Ptr<beam::ProtoDUNEBeamEvent> > beaminfo;
+      if (evt.getByLabel(fBeamModuleLabel, pdbeamHandle))
+        art::fill_ptr_vector(beaminfo, pdbeamHandle);
+      else{
+        std::cout<<"No beam information from "<<fBeamModuleLabel<<std::endl;
+      }
+
+      std::cout<<"test06"<<std::endl;
+            //Get beam particle trajectory info
+      auto & tracks = beaminfo[0]->GetBeamTracks();
+      std::cout<<tracks.size()<<std::endl;
+      fNumParticles_BL=tracks.size();
+
+      //double minSepAng=999; //currently going to minus 1)
+
+
+      
+      std::cout<<"test07"<<std::endl;
+
+      for (size_t i = 0; i<tracks.size(); ++i){
+        TVector3 pos_end = {tracks[i].End().X(), tracks[i].End().Y(), tracks[i].End().Z()}; 
+        TVector3 pos_start= {tracks[i].Start().X(), tracks[i].Start().Y(), tracks[i].Start().Z()}; 
+        TVector3 dir = {tracks[i].StartDirection().X(),tracks[i].StartDirection().Y(),tracks[i].StartDirection().Z()};
+        fBeamEndPoints_BL.push_back(pos_end);
+        fBeamStartPoints_BL.push_back(pos_start);
+        fBeamDirectionStart_BL.push_back(dir);
+        // float SeperationAng=track_vector.Dot(BeamDir[i])/(track_vector.Mag()*BeamDir[i].Mag());
+        // fSeperationAngs.push_back(SeperationAng);
+
+        // if(SeperationAng<minSepAng){
+        //   minSepAng=SeperationAng;
+
+        // }
+      }
+
+
+
+          //Get reconstructed beam momentum info
+          auto & beammom = beaminfo[0]->GetRecoBeamMomenta();
+          for (size_t i = 0; i<beammom.size(); ++i){
+            fMomentum_BL.push_back(beammom[i]);
+      }
+
+
+
+              if (beaminfo[0]->GetTOFChan() != -1){//if TOFChan == -1, then there was not a successful match, if it's 0, 1, 2, or 3, then there was a good match corresponding to the different pair-wise combinations of the upstream and downstream channels
+            fTOF_BL = beaminfo[0]->GetTOF();
+        }
+  }
+  
+  /*
+  // Now we want to access the output from Pandora. This comes in the form of particle flow objects (recob::PFParticle).
+  // The primary PFParticles are those we want to consider and these PFParticles then have a hierarchy of daughters that
+  // describe the whole interaction of a given primary particle
+  //
+  //                     / daughter track
+  //                    /
+  //  primary track    /   
+  //  ---------------- ---- daughter track
+  //                   \
+  //                   /\-
+  //                   /\\-- daughter shower
+  //
+  // The above primary PFParticle will have links to three daughter particles, two track-like and one shower-like
+  */
+
+  // Get the PFParticle utility
+  protoana::ProtoDUNEPFParticleUtils pfpUtil;
+
+  // Get all of the PFParticles, by default from the "pandora" product
+  auto recoParticles = evt.getValidHandle<std::vector<recob::PFParticle>>(fPFParticleTag);
+
+  // We'd like to find the beam particle. Pandora tries to do this for us, so let's use the PFParticle utility 
+  // to look for it. Pandora reconstructs slices containing one (or sometimes more) primary PFParticles. These
+  // are tagged as either beam or cosmic for ProtoDUNE. This function automatically considers only those
+  // PFParticles considered as primary
+  std::vector<const recob::PFParticle*> beamParticles = pfpUtil.GetPFParticlesFromBeamSlice(evt,fPFParticleTag);
+  fNumBeamParticles=beamParticles.size();
+  NumBeamParticles->Fill(beamParticles.size());
+
+  if(beamParticles.size() == 0){
+    std::cerr << "We found no beam particles for this event... moving on" << std::endl;
+
+    return;
+  }
+  
+  
+  // We can now look at these particles
+  for(const recob::PFParticle* particle : beamParticles){
+
+    // "particle" is the pointer to our beam particle. The recob::Track or recob::Shower object
+    // of this particle might be more helpful. These return null pointers if not track-like / shower-like
+    fvtx = pfpUtil.GetPFParticleVertex(*particle,evt,fPFParticleTag,fTrackerTag);
+    fBeamParticlePDG=particle->PdgCode();
+    const recob::Track* thisTrack = pfpUtil.GetPFParticleTrack(*particle,evt,fPFParticleTag,fTrackerTag);
+    const recob::Shower* thisShower = pfpUtil.GetPFParticleShower(*particle,evt,fPFParticleTag,fShowerTag);
+    if(thisTrack == 0x0){
+
+    } 
+
+    
+    if(thisShower != 0x0){
+      std::cout << "Beam particle is shower-like, returning" << std::endl;
+      fBeamParticleType='s';
+      EvtTree->Fill();
+      return;
+    } 
+    if(thisTrack == 0x0){
+      std::cout << "No track, return" << std::endl;
+      EvtTree->Fill();
+      return;
+    } 
+    else{
+      std::cout << "Beam particle is track-like" << std::endl;
+      fBeamParticleType='t';
+    }
+
+
+
+
+
+    // beam information
+    // std::vector<TVector3> beamEndPos;
+    // std::vector<TVector3> beamDir;
+
+
+    std::cout<<"test1"<<std::endl;
+      
+      // Find the particle vertex. We need the tracker tag here because we need to do a bit of
+    // additional work if the PFParticle is track-like to find the vertex. 
+    fvtx = pfpUtil.GetPFParticleVertex(*particle,evt,fPFParticleTag,fTrackerTag);
+    std::cout<<"test12"<<std::endl;
+    // Now we can look for the interaction point of the particle if one exists, i.e where the particle
+    // scatters off an argon nucleus. Shower-like objects won't have an interaction point, so we can
+    // check this by making sure we get a sensible position
+    finteractionvtx = pfpUtil.GetPFParticleSecondaryVertex(*particle,evt,fPFParticleTag,fTrackerTag);
+
+    std::cout<<"test13"<<std::endl;
+
+    // Get the track utility
+    protoana::ProtoDUNETrackUtils trackUtil;
+
+    TVector3 track_vector= finteractionvtx-fvtx;
+
+
+    if (!evt.isRealData()){
+          protoana::ProtoDUNETruthUtils truthUtil;
+    // Firstly we need to get the list of MCTruth objects from the generator. The standard protoDUNE
+    // simulation has fGeneratorTag = "generator"
+          auto mcTruths = evt.getValidHandle<std::vector<simb::MCTruth>>(fGeneratorTag);
+          std::cout<<"test14"<<std::endl;
+    // mcTruths is basically a pointer to an std::vector of simb::MCTruth objects. There should only be one
+    // of these, so we pass the first element into the function to get the good particle
+          fRecoTrackIsBeam_MCP=false;
+          const simb::MCParticle* geantGoodParticle = truthUtil.GetGeantGoodParticle((*mcTruths)[0],evt);
+          auto trueTrack=truthUtil.GetMCParticleFromRecoTrack(*thisTrack,evt,fTrackerTag); //this fucntopn fails and returns nothing sometimes, how?
+          if((geantGoodParticle != 0x0) & (trueTrack!= 0x0)){
+          std::cout<<"test15"<<std::endl;
+          
+          std::cout<<trueTrack<<std::endl;
+          
+          if(trueTrack->TrackId()==geantGoodParticle->TrackId()) fRecoTrackIsBeam_MCP=true;
+          std::cout<<"test2"<<std::endl;
+
+        }
+    } 
+
+
+
+    fTrack_pathlen=track_vector.Mag();
+    fTrack_Start = {thisTrack->Start().X(),thisTrack->Start().Y(),thisTrack->Start().Z()};
+    fTrack_StartDir = {thisTrack->StartDirection().X(),thisTrack->StartDirection().Y(),thisTrack->StartDirection().Z()};
+    fTrack_End = {thisTrack->End().X(),thisTrack->End().Y(),thisTrack->End().Z()};
+    fTrack_EndDir = {thisTrack->EndDirection().X(),thisTrack->EndDirection().Y(),thisTrack->EndDirection().Z()};
+
+
+                    //HY::Get the Calorimetry(s) from thisTrack
+    std::vector<anab::Calorimetry> calovector = trackUtil.GetRecoTrackCalorimetry(*thisTrack, evt, fTrackerTag, fCalorimetryTag);
+
+    std::vector<double> ftmp_primtrk_dqdx; 
+    std::vector<double> ftmp_primtrk_resrange; 
+    std::vector<double> ftmp_primtrk_dedx; 
+    std::vector<TVector3> ftmp_primtrk_hitpos; 
+    std::vector<double> ftmp_primtrk_pitch;
+    for (auto & calo : calovector){
+       if (calo.PlaneID().Plane == 2){ //only collection plane
+          fprimtrk_calorange=calo.Range();
+          for (size_t ihit = 0; ihit < calo.dQdx().size(); ++ihit){ //loop over hits
+              fprimtrk_dqdx.push_back(calo.dQdx()[ihit]);
+              fprimtrk_resrange.push_back(calo.ResidualRange()[ihit]);
+              fprimtrk_dedx.push_back(calo.dEdx()[ihit]);
+              fprimtrk_pitch.push_back(calo.TrkPitchVec()[ihit]);
+        TVector3 primtrk_hitpos_tmp;
+        const auto &primtrk_pos=(calo.XYZ())[ihit];
+              primtrk_hitpos_tmp.SetX(primtrk_pos.X()); //convert from stupid ROOT math 3d vector
+              primtrk_hitpos_tmp.SetY(primtrk_pos.Y());
+              primtrk_hitpos_tmp.SetZ(primtrk_pos.Z());
+              fprimtrk_hitpos.push_back(primtrk_hitpos_tmp);
+              std::cout<<"test3"<<std::endl;
+              // std::cout<<"dqdx="<<calo.dQdx()[ihit]<<"; resrange="<<calo.ResidualRange()[ihit]<<std::endl;
+              // std::cout<<"(X,Y,Z)="<<"("<<calo.XYZ()[ihit].X()<<","<<calo.XYZ()[ihit].Y()<<","<<calo.XYZ()[ihit].Z()<<")"<<std::endl;
+              //std::cout<<"(X,Y,Z)="<<"("<<primtrk_pos.X()<<","<<primtrk_pos.Y()<<","<<primtrk_pos.Z()<<")"<<std::endl;
+              //std::cout<<"(X,Y,Z)="<<"("<<tmp_primtrk_hitx[ihit]<<","<<tmp_primtrk_hity[ihit]<<","<<tmp_primtrk_hitz[ihit]<<")"<<std::endl;
+                        } //loop over hits
+                       } //only collection plane
+                }
+
+    //fBestAng=minSepAng;
+
+
+    //   if(tracks.size()!=0){
+    //     fSeperationAng=track_vector.Angle(BeamDir[0]);
+    // }
+
+    // Let's get the daughter PFParticles... we can do this simply without the utility
+    for(const int daughterID : particle->Daughters()){
+      // Daughter ID is the element of the original recoParticle vector
+      const recob::PFParticle *daughterParticle = &(recoParticles->at(daughterID));
+      std::cout << "Daughter " << daughterID << " has " << daughterParticle->NumDaughters() << " daughters" << std::endl;
+    }
+ 
+    // For actually studying the objects, it is easier to have the daughters in their track and shower forms.
+    // We can use the utility to get a vector of track-like and a vector of shower-like daughters
+    const std::vector<const recob::Track*> trackDaughters = pfpUtil.GetPFParticleDaughterTracks(*particle,evt,fPFParticleTag,fTrackerTag);  
+    const std::vector<const recob::Shower*> showerDaughters = pfpUtil.GetPFParticleDaughterShowers(*particle,evt,fPFParticleTag,fShowerTag);  
+    std::cout << "Beam particle has " << trackDaughters.size() << " track-like daughters and " << showerDaughters.size() << " shower-like daughters." << std::endl;
+    std::cout<<"test4"<<std::endl;
+    fNumDaughters=trackDaughters.size()+showerDaughters.size(); //this will get written multiple times in event of multiple beam particles
+  } 
+
+
+NumDaughters_hist->Fill(fNumDaughters);
+EvtTree->Fill();
+CandidateTree->Fill();
+fBeamEndPoints_BL.clear();
+fBeamDirectionStart_BL.clear();
+fBeamStartPoints_BL.clear();
+fMomentum_BL.clear();
+
+
+fprimtrk_dqdx.clear();
+fprimtrk_resrange.clear();
+fprimtrk_dedx.clear();
+fprimtrk_hitpos.clear();
+fprimtrk_pitch.clear();
+//fTOF_BL.clear();
+//fSeperationAngs.clear();
+}
+
+void protoana::PionAna::endJob()
+{
+
+}
+
+DEFINE_ART_MODULE(protoana::PionAna)
+

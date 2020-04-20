@@ -1,0 +1,39 @@
+#include "ProtoDUNEDataUtils.fcl"
+#include "ProtoDUNEBeamlineUtils.fcl"
+#include "ProtoDUNECalibration.fcl"
+BEGIN_PROLOG
+
+PionAna:
+{
+   module_type:             "PionAna"
+   CalorimetryTag:          "pandoracaloSCE"
+   TrackerTag:              "pandoraTrack"
+   ShowerTag:               "pandoraShower"
+   PFParticleTag:           "pandora"
+   GeneratorTag:            "generator"
+   BeamModuleLabel:         "beamevent"
+   MCParticleTag:			"largeant"  
+   ParticleIDTag:     "pandorapid"
+   Verbose:                 false
+
+
+
+
+   CalibrationPars: @local::CalorimetryParameters_SPProd2_MC_SCE
+
+
+   BrokenTrackParameters: {
+      BrokenTrackZ_low:  225
+      BrokenTrackZ_high: 235
+  
+      StitchTrackZ_low:  232
+      StitchTrackZ_high: 240
+  
+      StitchXTol:        10
+      StitchYTol:        10
+}
+   DataUtils: @local::standard_protodunedatautils
+   BeamlineUtils: @local::standard_protodunebeamlineutils
+}
+
+END_PROLOG

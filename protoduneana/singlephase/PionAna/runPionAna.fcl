@@ -1,0 +1,68 @@
+#include "services_dune.fcl"
+#include "PionAna.fcl"
+#include "ProtoDUNEUnstableHVFilter.fcl"
+#include "ProtoDUNEFembFilter.fcl"
+#include "ProtoDUNEBeamlineFilter.fcl"
+#include "missingproductfilter.fcl"
+#include "BeamEvent.fcl"
+#include "protodune_tools_dune.fcl"
+
+
+process_name: Piana
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  TFileService: { fileName: "trackUtils.root" }
+  TimeTracker:       {}
+  MemoryTracker:     {}
+  IFDH :{} 
+  RandomNumberGenerator: {} #ART native random number generator
+  message:              @local::dune_message_services_prod_debug
+  FileCatalogMetadata:  @local::art_file_catalog_mc
+                        @table::protodune_data_reco_services
+}
+services.message.destinations.LogStandardOut.threshold: "ERROR"
+
+#source is now a root file
+source:
+{
+  module_type: RootInput
+  maxEvents: -1
+  fileNames: ["input_file.root"]
+}
+
+
+
+physics:
+{
+
+ filters:
+ {
+
+      f1: @local::pdsp_fembfilter_beamside
+      f2: @local::HVfilter
+      f3: @local::standard_missingproductfilter
+   }
+
+   fpath: [f1, f2, f3]
+
+  
+
+ analyzers:
+ {
+  ana:          @local::PionAna
+
+ }
+
+
+ ana2:  [ ana ]
+
+ end_paths:     [ ana2 ]
+}
+
+
+
+
+physics.analyzers.ana.SelectEvents: [fpath]
+services.PdspChannelMapService:        @local::pdspchannelmap

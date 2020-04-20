@@ -1,0 +1,76 @@
+#include "services_dune.fcl"
+#include "PionAna.fcl"
+#include "ProtoDUNEUnstableHVFilter.fcl"
+#include "ProtoDUNEFembFilter.fcl"
+#include "ProtoDUNEBeamlineFilter.fcl"
+#include "missingproductfilter.fcl"
+#include "protodune_tools_dune.fcl"
+process_name: Piana
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  TFileService: { fileName: "trackUtils.root" }
+  TimeTracker:       {}
+  MemoryTracker:     {}
+    IFDH :{} 
+  RandomNumberGenerator: {} #ART native random number generator
+  message:              @local::dune_message_services_prod_debug
+  FileCatalogMetadata:  @local::art_file_catalog_mc
+  @table::protodune_reco_services
+}
+services.message.destinations.LogStandardOut.threshold: "INFO"
+
+#source is now a root file
+source:
+{
+  module_type: RootInput
+  maxEvents: -1
+  fileNames: ["input_file.root"]
+}
+
+physics:
+{
+
+ filters:
+  {
+
+    f1: @local::standard_missingproductfilter
+   }
+
+   fpath: [f1]
+
+ analyzers:
+ {
+  ana:          @local::PionAna
+
+ }
+
+ ana2:  [ ana ]
+
+ end_paths:     [ ana2 ]
+}
+
+
+
+
+physics.analyzers.ana.SelectEvents: [fpath]
+services.PdspChannelMapService:        @local::pdspchannelmap
+physics.analyzers.ana.CalorimetryParameters: {
+      PlaneID:      2
+      betap:        0.212
+      Rho:          1.383
+      Efield:       0.50
+      Wion:         23.6e-6
+      alpha:        0.93
+      norm_factor:  1.033
+      calib_factor: 5.3e-3
+      YZ_correction: "YZcalo_r1.root"
+      X_correction: "Xcalo_r1.root"
+      Efield_map: "SCE_DataDriven_180kV_v3.root"
+   }
+
+#for backtracking
+services.BackTrackerService.BackTracker.SimChannelModuleLabel: "tpcrawdecoder:simpleSC"
+#SCE or not
+physics.analyzers.ana.CalorimetryTag:  "pandoracalo"
