@@ -268,8 +268,9 @@ void protoana::ProtoDUNEFit::BuildWorkspace(TString Outputfile, int analysis){
   // Check if this is MC toys case
   // ----------------------------------------------------------------------------------------------------
 
-  if(_NToys > 0){
+  if (_NToys > 1/*0*/) {
     toys_tree = fitandgen->GenerateAndFit(ws, _NToys);
+    std::cout << "Got tree " << toys_tree << std::endl;
     toys_tree->SetNameTitle("protodUNE_mctoysresults", "protodUNE_mctoysresults");
 
     // For each set of plots need to clone the output tree to avoid ROOT crashes
@@ -283,7 +284,12 @@ void protoana::ProtoDUNEFit::BuildWorkspace(TString Outputfile, int analysis){
     TCanvas* nuispullscanvas =  protoana::ProtoDUNEFitUtils::PlotNuisanceParametersPull(mctoys_results3, ws);
 
     TTree *mctoys_results4 = (TTree*)toys_tree->Clone();
-    TCanvas* avresultcanvas = protoana::ProtoDUNEFitUtils::PlotAverageResultsFromToys(mctoys_results4, ws, "Channel0", "SigTopo");
+    //TCanvas* avresultcanvas = protoana::ProtoDUNEFitUtils::PlotAverageResultsFromToys(mctoys_results4, ws, "Channel0", "SigTopo");
+    TCanvas* avresultcanvas = protoana::ProtoDUNEFitUtils::PlotAverageResultsFromToys(mctoys_results4, ws, "POI", "POI");
+    std::cout << "plotted ave" << std::endl;
+
+    // Save workspace
+    protoana::ProtoDUNEFitUtils::SaveWorkspace(ws, Outputfile);
 
     TFile *f = new TFile(Outputfile.Data(), "UPDATE");
 
@@ -292,8 +298,10 @@ void protoana::ProtoDUNEFit::BuildWorkspace(TString Outputfile, int analysis){
 
     toys_tree->Write();
     nuisancecanvas->Write();
-    pullscanvas->Write();
-    nuispullscanvas->Write();
+    if (_NToys > 1) {
+      pullscanvas->Write();
+      nuispullscanvas->Write();
+    }
     avresultcanvas->Write();
 
     for(unsigned int i=0; i < bfAsimovplots.size(); i++){
@@ -360,8 +368,11 @@ void protoana::ProtoDUNEFit::BuildWorkspace(TString Outputfile, int analysis){
   // ----------------------------------------------------------------------------------------------------
   // Continue with either asimov or data fit
   // ----------------------------------------------------------------------------------------------------
-
-  if(_DoAsimovFit){
+ 
+  else if (_NToys == 1) {
+    fitresult = fitandgen->GenerateAndFitOneToy(ws);
+  }
+  else if (_DoAsimovFit) {
     fitresult = fitandgen->FitAsimovData(ws);
     treename = "protodUNE_asimovresults";
   }
@@ -425,13 +436,30 @@ void protoana::ProtoDUNEFit::BuildWorkspace(TString Outputfile, int analysis){
   toys_tree->SetNameTitle(treename.Data(),treename.Data());
 
   // Plot NLL
-  //std::vector<TCanvas*> nllplots = protoana::ProtoDUNEFitUtils::PlotNLL(ws,"PDFit",fitresult);
+  std::vector<TCanvas*> nllplots = protoana::ProtoDUNEFitUtils::PlotNLL(ws,"PDFit",fitresult);
 
   TTree *mctoys_results1 = (TTree*)toys_tree->Clone();
   TCanvas* nuisancecanvas = protoana::ProtoDUNEFitUtils::PlotNuisanceParameters(mctoys_results1, ws);
 
   TTree *mctoys_results2 = (TTree*)toys_tree->Clone();
-  TCanvas* avresultcanvas = protoana::ProtoDUNEFitUtils::PlotAverageResultsFromToys(mctoys_results2, ws, "POI", "POI");
+
+  RooArgList prefit_POI = fitresult->floatParsInit();
+  TCanvas* avresultcanvas = protoana::ProtoDUNEFitUtils::PlotAverageResultsFromToys(mctoys_results2, ws, "POI", "POI", &prefit_POI);
+
+  //Testing 
+  /*
+  RooArgList prefit_POI = fitresult->floatParsInit();
+  TIterator* itr = prefit_POI.createIterator();
+  RooRealVar * var = 0x0;
+  std::cout << "Prefit!!" << std::endl;
+  while ( (var = (RooRealVar*)itr->Next()) ) {
+    std::string name = var->GetName();
+    if (name.find("POI") == std::string::npos) continue;
+    std::cout << var->GetName() << " " << var->getVal() << std::endl;
+
+  }
+  */
+  
 
   //TTree *mctoys_results3 = (TTree*)toys_tree->Clone();
   //TCanvas* avresultcanvas_inc = protoana::ProtoDUNEFitUtils::PlotAverageResultsFromToys(mctoys_results3, ws, "POI", "POI");
@@ -472,6 +500,13 @@ void protoana::ProtoDUNEFit::BuildWorkspace(TString Outputfile, int analysis){
   for(unsigned int i=0; i < afplots.size(); i++){
     afplots[i]->Write();
   }
+
+  TDirectory *NLLDir = f->mkdir("NLLPlots");
+  NLLDir->cd();
+  for (size_t i = 0; i < nllplots.size(); ++i) {
+    nllplots[i]->Write();
+  }
+  NLLDir->cd("..");
 
   //pionflux_etruth_histo->Write();
   //pionflux_ereco_histo->Write();
@@ -660,7 +695,13 @@ void protoana::ProtoDUNEFit::AddSamplesAndChannelsToMeasurement(RooStats::HistFa
             poiname.ReplaceAll(channelname.Data(),"");
             poiname.ReplaceAll("__","_");
             meas.SetPOI(poiname.Data());
-            sample.AddNormFactor(poiname.Data(), 1.0, 0.0, 100./*2.0*/);
+            //sample.AddNormFactor(poiname.Data(), 1.0, 0.0, 100./*2.0*/);
+            if (_RandSigPriors) {
+              sample.AddNormFactor(poiname.Data(), rand.Gaus(1.0, .1), 0., 100.);
+            }
+            else {
+              sample.AddNormFactor(poiname.Data(), 1.0, 0.0, 100.0);
+            }
             mf::LogInfo("BuildMeasurement") << "Sample " << sample.GetName() << " has normalisation parameter " << poiname.Data();
           }
         }
@@ -717,7 +758,13 @@ void protoana::ProtoDUNEFit::AddSamplesAndChannelsToMeasurement(RooStats::HistFa
         poiname.ReplaceAll("__","_");
         poiname.ReplaceAll("_0_1000000","");
         meas.SetPOI(poiname.Data()); // AddPOI would also work
-        sample.AddNormFactor(poiname.Data(), 1.0, 0.0, 100.0);
+
+        if (_RandSigPriors) {
+          sample.AddNormFactor(poiname.Data(), rand.Gaus(1.0, .1), 0., 100.);
+        }
+        else {
+          sample.AddNormFactor(poiname.Data(), 1.0, 0.0, 100.0);
+        }
         mf::LogInfo("AddSamplesAndChannelsToMeasurement") << "Sample " << sample.GetName() << " has normalisation parameter " << poiname.Data();
 
         // Add sample to channel
@@ -812,7 +859,13 @@ void protoana::ProtoDUNEFit::AddIncidentSamplesAndChannelsToMeasurement(RooStats
         poiname.ReplaceAll(channelname.Data(),"");
         poiname.ReplaceAll("__","_");
         meas.SetPOI(poiname.Data());
-        sample.AddNormFactor(poiname.Data(), 1.0, 0.0, 2.0);
+        //sample.AddNormFactor(poiname.Data(), 1.0, 0.0, 2.0);
+        if (_RandSigPriors) {
+          sample.AddNormFactor(poiname.Data(), rand.Gaus(1.0, .1), 0., 2.);
+        }
+        else {
+          sample.AddNormFactor(poiname.Data(), 1.0, 0.0, 2.0);
+        }
         mf::LogInfo("BuildMeasurement") << "Sample " << sample.GetName() << " has normalisation parameter " << poiname.Data();
       }
     } 
@@ -879,7 +932,13 @@ void protoana::ProtoDUNEFit::AddIncidentSamplesAndChannelsToMeasurement(RooStats
     poiname.ReplaceAll(".0","");
     poiname.ReplaceAll("-","_");
     meas.SetPOI(poiname.Data()); // AddPOI would also work
-    sample.AddNormFactor(poiname.Data(), 1.0, 0.0, 100.0);
+    //sample.AddNormFactor(poiname.Data(), 1.0, 0.0, 100.0);
+    if (_RandSigPriors) {
+      sample.AddNormFactor(poiname.Data(), rand.Gaus(1.0, .1), 0., 100.);
+    }
+    else {
+      sample.AddNormFactor(poiname.Data(), 1.0, 0.0, 100.0);
+    }
     mf::LogInfo("AddIncidentSamplesAndChannelsToMeasurement") << "Sample " << sample.GetName() << " has normalisation parameter " << poiname.Data();
     
     // Add sample to channel
@@ -974,7 +1033,13 @@ void protoana::ProtoDUNEFit::AddSidebandSamplesAndChannelsToMeasurement(
           poiname.ReplaceAll("-","_");
           poiname.ReplaceAll("__","_");
           meas.SetPOI(poiname.Data());
-          sample.AddNormFactor(poiname.Data(), 1.0, 0.0, 100.0);
+          //sample.AddNormFactor(poiname.Data(), 1.0, 0.0, 100.0);
+          if (_RandSigPriors) {
+            sample.AddNormFactor(poiname.Data(), rand.Gaus(1.0, .1), 0., 100.);
+          }
+          else {
+            sample.AddNormFactor(poiname.Data(), 1.0, 0.0, 100.0);
+          }
           mf::LogInfo(message_source) << "Sample " << sample.GetName() <<
               " has normalisation parameter " << poiname.Data();
         //}
@@ -1137,6 +1202,14 @@ bool protoana::ProtoDUNEFit::FillHistogramVectors_Pions(){
         protoana::ProtoDUNESelectionUtils::FillDataHistogram_Pions(
             _DataFileNames[i], _RecoTreeName, _RecoBinning, _ChannelNames[i],
             _EndZCut, _DoNegativeReco));
+    /*
+    if (_StatFluctuation) {
+      for (int j = 0; j <= _datahistos.back()->GetNbinsX(); ++j) {
+        double new_val = rand.Poisson(_datahistos.back()->GetBinContent(j));
+        _datahistos.back()->SetBinContent(j, new_val);
+      }
+    }
+    */
   }
 
   for(int i=0; i < ninctopo; i++){
@@ -1206,6 +1279,14 @@ bool protoana::ProtoDUNEFit::FillHistogramVectors_Pions(){
           _EndZCut, _DoNegativeReco, true));
   }
   _incdatahistos.push_back(incdatahisto);
+  /*
+  if (_StatFluctuation) {
+    for (int j = 0; j <= _incdatahistos.back()->GetNbinsX(); ++j) {
+      double new_val = rand.Poisson(_incdatahistos.back()->GetBinContent(j));
+      _incdatahistos.back()->SetBinContent(j, new_val);
+    }
+  }
+  */
 
   std::pair<TH1 *, TH1 *> inc_eff_num_denom = 
         protoana::ProtoDUNESelectionUtils::GetMCIncidentEfficiency(
@@ -1334,6 +1415,15 @@ bool protoana::ProtoDUNEFit::FillSidebandHistograms_Pions() {
       protoana::ProtoDUNESelectionUtils::FillDataSidebandHistogram_Pions(
           _DataControlSampleFiles[0], _RecoTreeName, "APA2",
           _EndZCut, _SidebandBinning));
+
+  /*
+  if (_StatFluctuation) {
+    for (int j = 0; j <= _sideband_hists_data.back()->GetNbinsX(); ++j) {
+      double new_val = rand.Poisson(_sideband_hists_data.back()->GetBinContent(j));
+      _sideband_hists_data.back()->SetBinContent(j, new_val);
+    }
+  }
+  */
 
   return true;
 }
@@ -1651,6 +1741,8 @@ bool protoana::ProtoDUNEFit::Configure(std::string configPath){
 
   _DoScaleMCToData             = pset.get<bool>("DoScaleMCToData");
   _DoScaleMuonContent          = pset.get<bool>("DoScaleMuonContent");
+  _RandSigPriors               = pset.get<bool>("RandSigPriors");
+  //_StatFluctuation             = pset.get<bool>("StatFluctuation");
   _DataIsMC                    = pset.get<bool>("DataIsMC");
   _OnlyDrawXSecs               = pset.get<bool>("OnlyDrawXSecs");
   _WirePitch                   = pset.get<double>("WirePitch");
@@ -1706,14 +1798,14 @@ bool protoana::ProtoDUNEFit::BuildSignalSystThenApplyToSample(
             _MCFileNames[iChan], _RecoTreeName, _RecoBinning,
             _ChannelNames[iChan], _SignalTopologyName[iTopo],
             _SignalTopology[iTopo], _TruthBinning[iTruthBin-1],
-            _TruthBinning[iTruthBin], _EndZCut, false, -1, syst_name);
+            _TruthBinning[iTruthBin], _EndZCut, _DoNegativeReco, -1, syst_name);
 
     high_hist =
         protoana::ProtoDUNESelectionUtils::FillMCSignalHistogram_Pions(
             _MCFileNames[iChan], _RecoTreeName, _RecoBinning,
             _ChannelNames[iChan], _SignalTopologyName[iTopo],
             _SignalTopology[iTopo], _TruthBinning[iTruthBin-1],
-            _TruthBinning[iTruthBin], _EndZCut, false, 1, syst_name);
+            _TruthBinning[iTruthBin], _EndZCut, _DoNegativeReco, 1, syst_name);
 
     if (!(low_hist && high_hist)) {
       continue;
@@ -1754,14 +1846,14 @@ bool protoana::ProtoDUNEFit::BuildBackgroundSystThenApplyToSample(
         protoana::ProtoDUNESelectionUtils::FillMCBackgroundHistogram_Pions(
             _MCFileNames[iChan], _RecoTreeName, _RecoBinning,
             _ChannelNames[iChan], _BackgroundTopologyName[iTopo],
-            _BackgroundTopology[iTopo], _EndZCut, tmin, tmax, false, -1,
+            _BackgroundTopology[iTopo], _EndZCut, tmin, tmax, _DoNegativeReco, -1,
             syst_name);
 
     high_hist =
         protoana::ProtoDUNESelectionUtils::FillMCBackgroundHistogram_Pions(
             _MCFileNames[iChan], _RecoTreeName, _RecoBinning,
             _ChannelNames[iChan], _BackgroundTopologyName[iTopo],
-            _BackgroundTopology[iTopo], _EndZCut, tmin, tmax, false, 1,
+            _BackgroundTopology[iTopo], _EndZCut, tmin, tmax, _DoNegativeReco, 1,
             syst_name);
 
     if (!(low_hist && high_hist)) {
@@ -1959,14 +2051,14 @@ bool protoana::ProtoDUNEFit::BuildSystThenApplyToSample(
                 _MCFileNames[iChan], _RecoTreeName, _RecoBinning,
                 _ChannelNames[iChan], _SignalTopologyName[iTopo],
                 _SignalTopology[iTopo], _TruthBinning[iTruthBin-1],
-                _TruthBinning[iTruthBin], _EndZCut, false, -1, syst_name);
+                _TruthBinning[iTruthBin], _EndZCut, _DoNegativeReco, -1, syst_name);
 
         high_hist =
             protoana::ProtoDUNESelectionUtils::FillMCSignalHistogram_Pions(
                 _MCFileNames[iChan], _RecoTreeName, _RecoBinning,
                 _ChannelNames[iChan], _SignalTopologyName[iTopo],
                 _SignalTopology[iTopo], _TruthBinning[iTruthBin-1],
-                _TruthBinning[iTruthBin], _EndZCut, false, 1, syst_name);
+                _TruthBinning[iTruthBin], _EndZCut, _DoNegativeReco, 1, syst_name);
 
         break;
       }
@@ -1983,14 +2075,14 @@ bool protoana::ProtoDUNEFit::BuildSystThenApplyToSample(
             protoana::ProtoDUNESelectionUtils::FillMCBackgroundHistogram_Pions(
                 _MCFileNames[iChan], _RecoTreeName, _RecoBinning,
                 _ChannelNames[iChan], _BackgroundTopologyName[iTopo],
-                _BackgroundTopology[iTopo], _EndZCut, tmin, tmax, false, -1,
+                _BackgroundTopology[iTopo], _EndZCut, tmin, tmax, _DoNegativeReco, -1,
                 syst_name);
 
         high_hist =
             protoana::ProtoDUNESelectionUtils::FillMCBackgroundHistogram_Pions(
                 _MCFileNames[iChan], _RecoTreeName, _RecoBinning,
                 _ChannelNames[iChan], _BackgroundTopologyName[iTopo],
-                _BackgroundTopology[iTopo], _EndZCut, tmin, tmax, false, 1,
+                _BackgroundTopology[iTopo], _EndZCut, tmin, tmax, _DoNegativeReco, 1,
                 syst_name);
         break;
       }

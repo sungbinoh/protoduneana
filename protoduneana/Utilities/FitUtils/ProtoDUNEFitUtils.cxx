@@ -727,6 +727,12 @@ std::vector<TCanvas*> protoana::ProtoDUNEFitUtils::PlotDatasetsAndPdfs(
     frame->Draw(); //Draw("same");
     frame->GetXaxis()->SetTitle("Reco Bin");
     frame->GetYaxis()->SetTitle("Events");
+
+
+    std::string chi2_text = "#chi^{2}: " +
+                            std::to_string(GetDataMCChi2(work, catname, data));
+    legend->AddEntry((TObject*)0x0, chi2_text.c_str(), "");
+
     legend->Draw();
 
     pad2->cd();
@@ -1496,6 +1502,7 @@ TCanvas* protoana::ProtoDUNEFitUtils::PlotNuisanceParametersPull(TTree* tree, Ro
   RooRealVar* var(0);
   TIterator* Itr = nuisanceParsList->createIterator();
   Int_t counter = 0;
+  int ngammas = 0;
   for (Int_t i=0; (var = (RooRealVar*)Itr->Next()); ++i) {
     if(var->isConstant()) continue;
     TString varName = var->GetName() + TString("pull"); 
@@ -1503,6 +1510,9 @@ TCanvas* protoana::ProtoDUNEFitUtils::PlotNuisanceParametersPull(TTree* tree, Ro
     if(!varName.Contains("alpha") && !varName.Contains("gamma_stat")) continue;
     if(varName.Contains("Lumi") || varName.Contains("binWidth") || varName.Contains("corr")) continue;
     tree->SetBranchAddress(varName.Data(), &varValsPull[i]);
+
+    if (varName.Contains("gamma_stat"))
+      ++ngammas;
 
     TH1F* nuispullhisto = new TH1F(Form("nuispullhisto%i",i),Form("nuispullhisto%i",i),100,-5,5);
     for(Int_t j=0; j < tree->GetEntries(); j++){
@@ -1568,6 +1578,8 @@ TCanvas* protoana::ProtoDUNEFitUtils::PlotNuisanceParametersPull(TTree* tree, Ro
   mline->SetLineColor(kBlue);
   TLine *sline = new TLine(0,1.0,n,1.0);
   sline->SetLineColor(kBlue);
+  TLine *vline = new TLine(n-ngammas, -3., n - ngammas, 3.);
+  vline->SetLineColor(kGreen);
 
   cpullnui->cd();
   nuispullsigmahisto->Draw("e");
@@ -1575,6 +1587,7 @@ TCanvas* protoana::ProtoDUNEFitUtils::PlotNuisanceParametersPull(TTree* tree, Ro
   mline->Draw();
   sline->Draw();
   legend->Draw();
+  vline->Draw();
   
   return cpullnui;
 
@@ -1658,6 +1671,7 @@ TCanvas* protoana::ProtoDUNEFitUtils::PlotNuisanceParameters(TTree* tree, RooWor
     }
 
     nuisancehisto->SetBinError(i+1, temphisto->GetMean());
+    nuisancehisto->GetXaxis()->SetBinLabel(i+1, varName);
     delete temphisto;
   }
 
@@ -1695,8 +1709,8 @@ TCanvas* protoana::ProtoDUNEFitUtils::PlotNuisanceParameters(TTree* tree, RooWor
 }
 
 //********************************************************************
-TCanvas* protoana::ProtoDUNEFitUtils::PlotAverageResultsFromToys(TTree* tree, RooWorkspace* ws, TString channelname, TString catname){
-  //********************************************************************
+TCanvas* protoana::ProtoDUNEFitUtils::PlotAverageResultsFromToys(TTree* tree, RooWorkspace* ws, TString channelname, TString catname, RooArgList * PreFit_POI){
+//********************************************************************
 
   if(!tree || !ws){
     std::cerr << "ERROR::No tree or workspace found. Plot failed!" << std::endl;
@@ -1751,7 +1765,13 @@ TCanvas* protoana::ProtoDUNEFitUtils::PlotAverageResultsFromToys(TTree* tree, Ro
 
   Int_t n = namevec.size();
   TString histoname = channelname + "_MomHisto_" + catname;
-  TH1D* histo = new TH1D(histoname.Data(), histoname.Data(), n+1, 0, n+1);
+  TH1D* histo = new TH1D(histoname.Data(), histoname.Data(), n/*+1*/, 0, n/*+1*/);
+
+  TH1D * prefit_histo = 0x0;
+  if (PreFit_POI) {
+    TString prefit_name = "PreFit_" + histoname;
+    prefit_histo = (TH1D*)histo->Clone(prefit_name.Data());
+  }
 
   RooRealVar* var(0);
   TIterator* Itr = floatParsList->createIterator();
@@ -1759,6 +1779,7 @@ TCanvas* protoana::ProtoDUNEFitUtils::PlotAverageResultsFromToys(TTree* tree, Ro
 
   for(Int_t i=0; (var = (RooRealVar*)Itr->Next()); ++i) {
     TString varName = TString(var->GetName());
+    std::cout << "Ave name: " << varName << std::endl;
     if(!varName.Contains(channelname.Data())) continue;
     if(!varName.Contains(catname.Data())) continue;
     //if(varName.Contains("Lumi") || varName.Contains("binWidth") || varName.Contains("corr") || varName.Contains("Gamma")) continue;
@@ -1779,6 +1800,20 @@ TCanvas* protoana::ProtoDUNEFitUtils::PlotAverageResultsFromToys(TTree* tree, Ro
 
     histo->SetBinContent(counter, av);
     histo->SetBinError(counter, averr);
+    
+    if (PreFit_POI) {
+      RooRealVar * var2(0);
+      TIterator * prefit_itr = PreFit_POI->createIterator();
+      while ((var2 = (RooRealVar*)prefit_itr->Next())) {
+        std::cout << "Prefit:" << var2->GetName() << std::endl;
+        TString var2Name(var2->GetName());
+        if (var2Name == varName) {
+          std::cout << "Found match " << var2->GetName() << std::endl;
+          prefit_histo->SetBinContent(counter, var2->getVal());
+        }
+      }
+    }
+
     counter--;
   }
   
@@ -1813,11 +1848,26 @@ TCanvas* protoana::ProtoDUNEFitUtils::PlotAverageResultsFromToys(TTree* tree, Ro
   histo->GetXaxis()->SetLabelSize(0.02);
 
   TCanvas* c = new TCanvas(histoname.Data(), histoname.Data());
-  histo->Draw("e");
+  histo->SetFillStyle(3144);
+  histo->SetFillColor(kRed);
+  histo->Draw("e2");
   line->Draw("same");
+
   //line1->Draw("same");
   //line2->Draw("same");
   //line3->Draw("same");
+
+  TLegend * leg = new TLegend(.65, .65, .85, .85);
+  leg->AddEntry(histo, "Postfit", "lpf");
+
+  if (PreFit_POI) {
+    prefit_histo->SetMarkerColor(kBlue);
+    prefit_histo->SetMarkerStyle(20);
+    prefit_histo->Draw("p same");
+    leg->AddEntry(prefit_histo, "Prefit", "lpf");
+  }
+
+  leg->Draw("same");
 
   return c;
 
