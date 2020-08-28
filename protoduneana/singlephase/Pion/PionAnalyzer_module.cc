@@ -2645,13 +2645,10 @@ std::cout << "Got" << std::endl;
           double totalTruth = truthUtil.GetMCParticleHits( *match.particle, evt, fHitTag).size();
           
           double sharedHits = truthUtil.GetSharedHits( *match.particle, *daughterPFP, evt, fPFParticleTag).size();
-          //double sharedHits_dr = truthUtil.GetSharedHits( *match.particle, *daughterPFP, evt, fPFParticleTag, true).size();
 
-          double sharedHits_all = sharedHits;// + sharedHits_dr;
-  
           reco_daughter_PFP_true_byHits_purity.push_back( matched_hits / total );
           reco_daughter_PFP_true_byHits_purity_direct.push_back( purity );
-          reco_daughter_PFP_true_byHits_completeness.push_back( sharedHits_all/totalTruth );
+          reco_daughter_PFP_true_byHits_completeness.push_back( sharedHits/totalTruth );
           reco_daughter_PFP_true_byHits_completeness_direct.push_back( completeness );
         }
    
