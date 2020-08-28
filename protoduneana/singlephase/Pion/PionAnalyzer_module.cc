@@ -2643,7 +2643,6 @@ std::cout << "Got" << std::endl;
           double purity = truthUtil.GetPurity( *daughterPFP, evt, fPFParticleTag);
           double completeness = truthUtil.GetCompleteness( *daughterPFP, evt, fPFParticleTag, fHitTag );
           double totalTruth = truthUtil.GetMCParticleHits( *match.particle, evt, fHitTag).size();
-          
           double sharedHits = truthUtil.GetSharedHits( *match.particle, *daughterPFP, evt, fPFParticleTag).size();
 
           reco_daughter_PFP_true_byHits_purity.push_back( matched_hits / total );
