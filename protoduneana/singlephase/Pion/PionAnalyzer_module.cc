@@ -59,6 +59,7 @@
 #include "geant4reweight/src/ReweightBase/G4ReweightStep.hh"
 #include "geant4reweight/src/PropBase/G4ReweightParameterMaker.hh"
 #include "geant4reweight/src/ReweightBase/G4MultiReweighter.hh"
+#include "geant4reweight/src/ReweightBase/G4ReweightManager.hh"
 
 
 
@@ -98,12 +99,10 @@ namespace pionana {
           (ides[i]->z - (the_z0 - the_pitch/2.)) / the_pitch);
 
       
-      /*
       std::cout << "IDE: " << i << " ID: " << ides[i]->trackID << " Edep: "
                 << ides[i]->energy << " (X,Y,Z): " << "(" << ides[i]->x << ","
                 << ides[i]->y<<","<<ides[i]->z << ") Z0: " << the_z0
                 << " Slice: " << slice_num << std::endl;
-     */ 
 
       results[slice_num].push_back(ides[i]);
     }
@@ -960,6 +959,7 @@ private:
   std::vector<fhicl::ParameterSet> ParSet;
   G4ReweightParameterMaker ParMaker;
   G4MultiReweighter * MultiRW, * ProtMultiRW;
+  G4ReweightManager * RWManager;
   //G4ReweighterFactory RWFactory;
   //G4Reweighter * theRW;
 };
@@ -1006,12 +1006,18 @@ pionana::PionAnalyzer::PionAnalyzer(fhicl::ParameterSet const& p)
   //ParMaker(ParSet),
   //MultiRW(211, XSecFile, FracsFile, ParSet)
 
+  if (fDoReweight || fDoProtReweight) {
+    RWManager = new G4ReweightManager({p.get<fhicl::ParameterSet>("Material")});
+  }
   if (fDoReweight) {
     FracsFile =  new TFile((p.get< std::string >( "FracsFile" )).c_str(), "OPEN" );
     XSecFile = new TFile((p.get< std::string >( "XSecFile" )).c_str(), "OPEN");
     ParSet = p.get<std::vector<fhicl::ParameterSet>>("ParameterSet");
     ParMaker = G4ReweightParameterMaker(ParSet);
-    MultiRW = new G4MultiReweighter(211, *XSecFile, *FracsFile, ParSet/*, 100, 0*/);
+    MultiRW = new G4MultiReweighter(211, *FracsFile, ParSet,
+                                    p.get<fhicl::ParameterSet>("Material"),
+                                    RWManager
+                                    /*, 100, 0*/);
 
     //theRW = RWFactory.BuildReweighter( 211, XSecFile, FracsFile, ParMaker.GetFSHists(), ParMaker.GetElasticHist()/*, true*/ );
   }
@@ -1022,8 +1028,10 @@ pionana::PionAnalyzer::PionAnalyzer(fhicl::ParameterSet const& p)
                              "OPEN");
     ParSet = p.get<std::vector<fhicl::ParameterSet>>("ParameterSet");
     ParMaker = G4ReweightParameterMaker(ParSet);
-    ProtMultiRW = new G4MultiReweighter(2212, *ProtXSecFile, *ProtFracsFile,
-                                        ParSet);
+    ProtMultiRW = new G4MultiReweighter(2212, *ProtFracsFile,
+                                        ParSet,
+                                        p.get<fhicl::ParameterSet>("Material"),
+                                        RWManager);
   }
 
   // Call appropriate consumes<>() for any products to be retrieved by this module.

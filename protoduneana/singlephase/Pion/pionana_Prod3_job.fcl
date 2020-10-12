@@ -1,5 +1,6 @@
 #include "PionAnalyzer.fcl"
 #include "services_dune.fcl"
+#include "ProtoDUNETruthBeamFilter.fcl"
 
 
 process_name: PionAna
@@ -41,6 +42,12 @@ physics:
  
  }
 
+ filters: { 
+   fTruth: @local::beam_filter
+ }
+
+ fpath: [fTruth]
+
  analyzers:
  {
   pionana:          @local::pionanalysis
@@ -55,7 +62,8 @@ physics:
 }
 
 outputs: {}
-physics.analyzers.pionana.SelectEvents: []
+physics.filters.fTruth.PDG: [211, -13, 2212]
+physics.analyzers.pionana.SelectEvents: ["fpath"]
 #physics.analyzers.pionana.CalorimetryTag: "pandoracalonosce" ##For no-SCE sample
 physics.analyzers.pionana.CalorimetryTag: "pandoracali"
 #physics.analyzers.pionana.Pandora2CaloSCE: "pandora2calo"

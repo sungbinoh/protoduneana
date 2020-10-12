@@ -58,4 +58,5 @@ physics.analyzers.pionana.SelectEvents: ["fpath"]
 physics.analyzers.pionana.CalorimetryTag: "pandoracaloSCE"
 physics.analyzers.pionana.HitTag: "hitpdune"
 physics.analyzers.pionana.Verbose: true
+physics.analyzers.pionana.DoProtReweight: false
 #physics.analyzers.pionana.SaveHits: true
