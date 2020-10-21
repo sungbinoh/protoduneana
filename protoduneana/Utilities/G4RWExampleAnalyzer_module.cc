@@ -84,6 +84,10 @@ private:
       true_beam_nNeutron_daughter;
   std::string true_beam_endProcess;
   int true_beam_nElasticScatters;
+  std::vector<std::string> true_beam_processes;
+  std::vector<std::string> true_beam_daughter_processes;
+  std::vector<int> true_beam_daughter_keys;
+
   std::vector<double> g4rw_primary_plus_sigma_weight;
   std::vector<double> g4rw_primary_minus_sigma_weight;
   std::vector<double> g4rw_primary_weights;
@@ -126,7 +130,7 @@ protoana::G4RWExampleAnalyzer::G4RWExampleAnalyzer(
       //ProtFracsFile( (p.get< std::string >( "ProtFracsFile" )).c_str(), "OPEN" ),
       //ProtXSecFile( (p.get< std::string >( "ProtXSecFile" )).c_str(), "OPEN"),
       ParSet(p.get<std::vector<fhicl::ParameterSet>>("ParameterSet")),
-      ParMaker(ParSet, RW_PDG),
+      ParMaker(ParSet, false, RW_PDG),
       RWManager({p.get<fhicl::ParameterSet>("Material")}),
       MultiRW(RW_PDG, FracsFile, ParSet,
               p.get<fhicl::ParameterSet>("Material"),
@@ -196,6 +200,17 @@ void protoana::G4RWExampleAnalyzer::analyze(art::Event const& e) {
       }
       else if (pdg == 2112) {
         ++true_beam_nNeutron_daughter;
+
+        const simb::MCTrajectory & traj = part->Trajectory();
+
+        auto proc_map = traj.TrajectoryProcesses();
+        for (auto itProc = proc_map.begin();
+             itProc != proc_map.end(); ++itProc) {
+          std::cout << "Key: " << int(itProc->second) << std::endl;
+          std::string process = traj.KeyToProcess(itProc->second);
+          true_beam_daughter_processes.push_back(process);
+          true_beam_daughter_keys.push_back(int(itProc->second));
+        }
       }
     }
 
@@ -278,7 +293,9 @@ void protoana::G4RWExampleAnalyzer::analyze(art::Event const& e) {
   for (auto itProc = true_beam_proc_map.begin();
        itProc != true_beam_proc_map.end(); ++itProc) {
     //int index = itProc->first;
+    std::cout << "Key: " << int(itProc->second) << std::endl;
     std::string process = true_beam_trajectory.KeyToProcess(itProc->second);
+    true_beam_processes.push_back(process);
 
     if (process == "hadElastic") {
       ++true_beam_nElasticScatters;
@@ -461,6 +478,9 @@ void protoana::G4RWExampleAnalyzer::beginJob() {
   fTree->Branch("true_beam_nNeutron_daughter", &true_beam_nNeutron_daughter);
   fTree->Branch("true_beam_endProcess", &true_beam_endProcess);
   fTree->Branch("true_beam_nElasticScatters", &true_beam_nElasticScatters);
+  fTree->Branch("true_beam_processes", &true_beam_processes);
+  fTree->Branch("true_beam_daughter_processes", &true_beam_daughter_processes);
+  fTree->Branch("true_beam_daughter_keys", &true_beam_daughter_keys);
 
   fTree->Branch("reco_beam_len", &reco_beam_len);
   fTree->Branch("reco_beam_startX", &reco_beam_startX);
@@ -508,6 +528,9 @@ void protoana::G4RWExampleAnalyzer::reset() {
   true_beam_endZ = -1.;
   true_beam_endP = -1.;
   true_beam_endProcess = "";
+  true_beam_processes.clear();
+  true_beam_daughter_processes.clear();
+  true_beam_daughter_keys.clear();
   true_beam_nElasticScatters = 0.;
   true_beam_nPi0_daughter = 0;
   true_beam_nPiPlus_daughter = 0;
