@@ -8,6 +8,7 @@ services:
   TimeTracker:       {}
   RandomNumberGenerator: {} 
   ExptGeoHelperInterface:         @local::dune_geometry_helper 
+  GeometryConfigurationWriter: {}
   Geometry:                       @local::protodunedphase_geo
   DetectorPropertiesService:      @local::protodunedphase_detproperties
   DetectorClocksService:          @local::protodunedphase_detectorclocks

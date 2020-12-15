@@ -24,6 +24,7 @@ services:
   	TimeTracker:             	{}
   	ExptGeoHelperInterface:   	@local::dune_geometry_helper
   	Geometry:                 	@local::protodune_geo
+        GeometryConfigurationWriter:    {}
   	DetectorProperties:       	@local::protodunesp_detproperties
   	LArProperties:            	@local::dunefd_properties
   	DetectorClocksService:    	@local::protodune_detectorclocks
