@@ -1,0 +1,23 @@
+#include "triggeralgo_service.fcl"
+BEGIN_PROLOG
+pdspmisalignment: {
+  module_type: "PDSPMisalignment"
+  SpacePointTag: "reco3d"
+
+  XOffset: 0
+  YOffset: 0
+  ZOffset: 0
+
+  XWidth: 363.7
+  YWidth: 600.
+  ZWidth: 232.39
+
+  DistCutZ: 20.
+  DistZExclude: 5.
+  D3DClus: 3.
+  
+  PlotAllSegs: false
+  PlotMatchedSegs: false
+
+}
+END_PROLOG
