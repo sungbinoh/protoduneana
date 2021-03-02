@@ -610,6 +610,7 @@ void pduneana::PDSPMisalignment::endJob() {
   std::string titlestring = fSpacePointTag;
   titlestring += " SpacePoints for Alignment";
   fOutputGraph->SetTitle(titlestring.c_str());
+  fC1->cd();
   fOutputGraph->Draw("P");
   fOutputGraph->GetXaxis()->SetTitle("Z (cm)");
   fOutputGraph->GetXaxis()->SetTitleColor(4);

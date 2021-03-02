@@ -48,3 +48,5 @@ physics:
  end_paths:     [ ana ]
 
 }
+
+physics.analyzers.misalignment.PlotMatchedSegs: true
