@@ -1,0 +1,19 @@
+CC=g++
+CFLAGS = -c -g -Wall -fPIC
+ROOTFLAGS = `root-config --cflags --glibs`
+SOURCES = NDKAna.cpp Template_PIDloglike.cpp
+EXECUTABLE = NDKAna Template_PIDloglike
+OBJECTS=$(SOURCES: .cpp=.o)
+
+
+all: $(SOURCES) $(EXECUTABLE)
+
+Template_PIDloglike%: NDKAna.o Template_PIDloglike%.o
+	$(CC) $(LDFLAGS) $^ -o $@ $(ROOTFLAGS) $(ROOTLIBS)
+
+%.o: %.cpp
+	$(CC) $(CFLAGS) $(ROOTFLAGS) $< -o $@
+
+clean:
+	rm $(EXECUTABLE)
+	rm *.o

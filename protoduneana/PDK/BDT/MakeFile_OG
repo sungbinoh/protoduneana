@@ -1,0 +1,19 @@
+CC=g++
+CFLAGS = -c -g -Wall -fPIC
+ROOTFLAGS = `root-config --cflags --glibs`
+SOURCES = NDKAna.cpp TMVA_tree.cpp 
+EXECUTABLE = NDKAna TMVA_tree
+OBJECTS=$(SOURCES: .cpp=.o)
+
+
+all: $(SOURCES) $(EXECUTABLE)
+
+$(EXECUTABLE): $(OBJECTS) 
+	$(CC) $(LDFLAGS) $(OBJECTS) -o $@ $(ROOTFLAGS) $(ROOTLIBS)
+
+.cpp.o:
+	$(CC) $(CFLAGS) $(ROOTFLAGS) $< -o $@
+
+clean:
+	rm $(EXECUTABLE)
+	rm *.o

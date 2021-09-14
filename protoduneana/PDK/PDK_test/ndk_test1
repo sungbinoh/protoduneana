@@ -1,0 +1,182 @@
+nohup: ignoring input
+The following paths have not been enabled for execution and will be ignored:
+  stream1
+The following module labels are either not assigned to any path,
+or they have been assigned to ignored path(s):
+  blurredcluster
+  blurredclusterdc
+  caldata
+  calo
+  calodc
+  dcheat
+  emshower
+  emshower3d
+  emshower3ddc
+  emshowerdc
+  emtrkmichelid
+  fasthit
+  fasthitdc
+  lineclusterdc
+  mergeemshower3d
+  mergeemshower3ddc
+  opflash
+  ophit
+  out1
+  pandoraShowerLegacy
+  pandoraShowerdc
+  pandoraTrackdc
+  pandoracalodc
+  pandoradc
+  pandorapiddc
+  pmtrack
+  pmtrackcalo
+  pmtrackcalodc
+  pmtrackdc
+  pmtrackpid
+  pmtrackpiddc
+  pmtracktc
+  pmtracktccalo
+  pmtracktccalodc
+  pmtracktcdc
+  pmtracktcpid
+  pmtracktcpiddc
+  pmtrajfit
+  pmtrajfitcalo
+  pmtrajfitcalodc
+  pmtrajfitdc
+  pmtrajfitpid
+  pmtrajfitpiddc
+  pmtrajfittc
+  pmtrajfittccalo
+  pmtrajfittcpid
+  trajcluster
+  trkshowersplit
+  trkshowersplitdc
+%MSG-i MF_INIT_OK:  Early 10-Aug-2021 03:38:40 CDT JobSetup
+Messagelogger initialization complete.
+%MSG
+DuneDeconvolutionService::ctor: DuneDeconvolutionService:
+DuneDeconvolutionService::ctor:                LogLevel: 1
+DuneRoiBuildingService::ctor: DuneRoiBuildingService:
+DuneRoiBuildingService::ctor:     LogLevel: 1
+DuneRoiBuildingService::ctor:  NSigmaStart: 3
+DuneRoiBuildingService::ctor:    NSigmaEnd: 1
+DuneRoiBuildingService::ctor:       PadLow: 50
+DuneRoiBuildingService::ctor:      PadHigh: 50
+StandardAdcWireBuildingService::ctor: StandardAdcWireBuildingService:
+StandardAdcWireBuildingService::ctor:     LogLevel: 1
+Info in <TGeoManager::Import>: Reading geometry from file: /dune/app/users/tstokes/v09_22_02/build_slf7.x86_64/dunetpc/gdml/dune10kt_v4_1x2x6.gdml
+Info in <TGeoManager::TGeoManager>: Geometry GDMLImport, Geometry imported from GDML created
+Info in <TGeoManager::SetTopVolume>: Top volume is volWorld. Master volume is volWorld
+Info in <TGeoNavigator::BuildCache>: --- Maximum geometry depth set to 100
+Info in <TGeoManager::CheckGeometry>: Fixing runtime shapes...
+Info in <TGeoManager::CheckGeometry>: ...Nothing to fix
+Info in <TGeoManager::CloseGeometry>: Counting nodes...
+Info in <TGeoManager::Voxelize>: Voxelizing...
+Info in <TGeoManager::CloseGeometry>: Building cache...
+Info in <TGeoManager::CountLevels>: max level = 5, max placements = 1149
+Info in <TGeoManager::CloseGeometry>: 67545 nodes/ 3831 volume UID's in Geometry imported from GDML
+Info in <TGeoManager::CloseGeometry>: ----------------modeler ready----------------
+%MSG-i GeometryCore:  Early 10-Aug-2021 03:38:48 CDT JobSetup
+New detector geometry loaded from 
+	/dune/app/users/tstokes/v09_22_02/build_slf7.x86_64/dunetpc/gdml/dune10kt_v4_1x2x6.gdml
+	/dune/app/users/tstokes/v09_22_02/build_slf7.x86_64/dunetpc/gdml/dune10kt_v4_1x2x6_nowires.gdml
+
+%MSG
+%MSG-i GeometryCore:  Early 10-Aug-2021 03:38:48 CDT JobSetup
+Sorting volumes...
+%MSG
+%MSG-i DuneApaChannelMapAlg:  Early 10-Aug-2021 03:38:48 CDT JobSetup
+Initializing channel map...
+%MSG
+Cryostat 0:
+  30720 total channels
+  12 APAs
+  For all identical APA:
+    Number of channels per APA = 2560
+    U channels per APA = 800
+    V channels per APA = 800
+    Z channels per APA = 960
+    Pitch in U Plane = 0.4667
+    Pitch in V Plane = 0.4667
+    Pitch in Z Plane = 0.479
+GeoApaChannelGroupService::ctor: Group 0 (apa00) has 2560 channels from 4/4 readout planes.
+GeoApaChannelGroupService::ctor: Group 1 (apa01) has 2560 channels from 4/4 readout planes.
+GeoApaChannelGroupService::ctor: Group 2 (apa02) has 2560 channels from 4/4 readout planes.
+GeoApaChannelGroupService::ctor: Group 3 (apa03) has 2560 channels from 4/4 readout planes.
+GeoApaChannelGroupService::ctor: Group 4 (apa04) has 2560 channels from 4/4 readout planes.
+GeoApaChannelGroupService::ctor: Group 5 (apa05) has 2560 channels from 4/4 readout planes.
+GeoApaChannelGroupService::ctor: Group 6 (apa06) has 2560 channels from 4/4 readout planes.
+GeoApaChannelGroupService::ctor: Group 7 (apa07) has 2560 channels from 4/4 readout planes.
+GeoApaChannelGroupService::ctor: Group 8 (apa08) has 2560 channels from 4/4 readout planes.
+GeoApaChannelGroupService::ctor: Group 9 (apa09) has 2560 channels from 4/4 readout planes.
+GeoApaChannelGroupService::ctor: Group 10 (apa10) has 2560 channels from 4/4 readout planes.
+GeoApaChannelGroupService::ctor: Group 11 (apa11) has 2560 channels from 4/4 readout planes.
+%MSG-i SimpleChannelStatusService:  Early 10-Aug-2021 03:38:48 CDT JobSetup
+Loaded from configuration:
+  - 0 bad channels
+  - 0 noisy channels
+  - largest channel ID: 30719, largest present: 30719
+%MSG
+%MSG-i setupProvider<DetectorPropertiesStandard>:  Early  10-Aug-2021 03:38:49 CDT JobSetup
+Asked to ignore 1 keys: 'InheritNumberTimeSamples'
+%MSG
+DuneToolManager::fclFilename: Taking fcl name from command line: lar -c NDKAnalysis_wHitReco_wPandoraReco_wTruthMatching.fcl -n 10 -S MC_Files/hA_BR_Atm.txt
+AcdDigitReader::ctor:     LogLevel: 1
+DuneToolManager::getPrivate: Tool name is blank
+StandardRawDigitExtractService::ctor: Retrieved digit read tool digitReader
+StandardRawDigitExtractService::ctor: StandardRawDigitExtractService:
+StandardRawDigitExtractService::ctor:         LogLevel: 1
+StandardRawDigitExtractService::ctor:    DigitReadTool: digitReader
+StandardRawDigitExtractService::ctor:   PedestalOption: 1
+StandardRawDigitExtractService::ctor:     FlagStuckOff: 0
+StandardRawDigitExtractService::ctor:      FlagStuckOn: 0
+StandardRawDigitPrepService::ctor: Fetching extract service.
+StandardRawDigitPrepService::ctor: Fetching channel status provider.
+StandardRawDigitPrepService::ctor:   Channel status provider: @0x98d2f50
+StandardRawDigitPrepService::ctor:   Extract service: @0xa40ac40
+StandardRawDigitPrepService::ctor: Fetching deconvolution service.
+StandardRawDigitPrepService::ctor:   Deconvolution service: @0x9128ef0
+StandardRawDigitPrepService::ctor: Fetching ROI building service.
+StandardRawDigitPrepService::ctor:   ROI building service: @0x9125110
+StandardRawDigitPrepService::ctor: Fetching wire building service.
+StandardRawDigitPrepService::ctor:   Wire building service: @0x9124af0
+StandardRawDigitPrepService::ctor: StandardRawDigitPrepService:
+StandardRawDigitPrepService::ctor:              LogLevel: 1
+StandardRawDigitPrepService::ctor:               SkipBad: 1
+StandardRawDigitPrepService::ctor:             SkipNoisy: 0
+StandardRawDigitPrepService::ctor:   ChannelStatusOnline: 0
+StandardRawDigitPrepService::ctor:          DoMitigation: 0
+StandardRawDigitPrepService::ctor:  DoEarlySignalFinding: 0
+StandardRawDigitPrepService::ctor:        DoNoiseRemoval: 0
+StandardRawDigitPrepService::ctor:       DoDeconvolution: 1
+StandardRawDigitPrepService::ctor:  DoPedestalAdjustment: 0
+StandardRawDigitPrepService::ctor:                 DoROI: 1
+StandardRawDigitPrepService::ctor:               DoWires: 1
+StandardRawDigitPrepService::ctor:                DoDump: 0
+StandardRawDigitPrepService::ctor:  DoIntermediateStates: 0
+StandardRawDigitPrepService::ctor: No display tools.
+%MSG-i SignalShapingServiceDUNE:  Early 10-Aug-2021 03:38:52 CDT JobSetup
+Getting Filter from .fcl file
+%MSG
+%MSG-i SignalShapingServiceDUNE:  Early 10-Aug-2021 03:38:52 CDT JobSetup
+ using the field response provided from a .root file 
+%MSG
+Warning in <TFile::Append>: Replacing existing TH1: FieldResponse_U (Potential memory leak).
+Warning in <TFile::Append>: Replacing existing TH1: FieldResponse_V (Potential memory leak).
+Warning in <TFile::Append>: Replacing existing TH1: FieldResponse_Y (Potential memory leak).
+*************************************************************************************************************************************
+Unique Ptrs that are added to the event
+*************************************************************************************************************************************
+* Data Product Name: InitialTrack             * Instance Name:  * Type: std::vector<recob::Track, std::allocator<recob::Track> >*   *
+* Data Product Name: ShowerPCA                * Instance Name:  * Type: std::vector<recob::PCAxis, std::allocator<recob::PCAxis> >* *
+* Data Product Name: shower                   * Instance Name:  * Type: std::vector<recob::Shower, std::allocator<recob::Shower> >* *
+* Association Name:  PFParticlePCAxisAssn     * Instance Name:  * Type: art::Assns<recob::PFParticle, recob::PCAxis, void>*         *
+* Association Name:  ShowerPCAxisAssn         * Instance Name:  * Type: art::Assns<recob::Shower, recob::PCAxis, void>*             *
+* Association Name:  ShowerTrackAssn          * Instance Name:  * Type: art::Assns<recob::Shower, recob::Track, void>*              *
+* Association Name:  ShowerTrackHitAssn       * Instance Name:  * Type: art::Assns<recob::Track, recob::Hit, void>*                 *
+* Association Name:  clusterAssociationsbase  * Instance Name:  * Type: art::Assns<recob::Shower, recob::Cluster, void>*            *
+* Association Name:  hitAssociationsbase      * Instance Name:  * Type: art::Assns<recob::Shower, recob::Hit, void>*                *
+* Association Name:  pfShowerAssociationsbase * Instance Name:  * Type: art::Assns<recob::Shower, recob::PFParticle, void>*         *
+* Association Name:  spShowerAssociationsbase * Instance Name:  * Type: art::Assns<recob::Shower, recob::SpacePoint, void>*         *
+*************************************************************************************************************************************

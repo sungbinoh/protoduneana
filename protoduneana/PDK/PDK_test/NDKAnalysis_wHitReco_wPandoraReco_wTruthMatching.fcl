@@ -1,0 +1,99 @@
+#include "calorimetry_dune10kt.fcl"
+#include "services_dune.fcl"
+#include "standard_reco_dune10kt.fcl"
+
+
+process_name: NDKAna
+
+services:
+{
+  TFileService: { fileName: "ndk_test.root" }
+  TimeTracker:       {}
+  RandomNumberGenerator: {}
+  message: @local::standard_info
+  FileCatalogMetadata:  @local::art_file_catalog_mc
+                        @table::dunefd_simulation_services
+   @table::dunefd_reco_services
+
+}
+services.Geometry: @local::dune10kt_1x2x6_geo
+services.OpDetResponseInterface.QuantumEfficiency: 3.0E-2
+source:
+{
+  module_type: RootInput
+  firstEvent : 1
+  maxEvents: 500
+}
+
+
+
+physics:
+{
+  producers: @local::physics.producers
+  analyzers:
+  {
+    NDKAna:
+    {
+      module_type:      	"NDKAnaKsearch"
+      SaveHits:			false
+      MCgenieLabel:		"generator"
+      HitModuleLabel:	 	"gaushit"
+      TrackModuleLabel: 	"pandoraTrack"
+      PidModuleLabel: 	        "pandorapid"
+      CaloModuleLabel: 	        "pandoracalo"
+      OpFlashModuleLabel:	"opflash"
+      ShowerModuleLabel:        "pandoraShower"
+      NNetModuleLabel:          "emtrkmichelid:emtrkmichel"
+      ExponentConstant:         0.42
+      MaxPIDAValue:		50.0
+      MinPIDAValue:		1.0
+      PidValue:		        0.1
+      CalorimetryAlg:           @local::dune10kt_calorimetryalgmc
+      View:			0
+      PointIDModuleLabel:       "decayid"
+      PIDA_endPoint:		30.0
+      FidVolCutX:		10.0
+      FidVolCutY:		10.0
+      FidVolCutZ:		10.0
+
+    }
+  }
+   analysis: [ NDKAna ] //Directory for histograms
+
+  reco: [
+     rns,
+      #optical hits and flashes
+      #ophit, opflash,
+      #TPC wire signals
+      # caldata,
+      #hit reco
+      # fasthit,
+      gaushit,
+      #disambiguation
+      hitfd,
+      #cluster reco
+      linecluster,
+      # trajcluster,
+      #track shower split
+      # trkshowersplit,
+      #pandora
+      pandora, pandoraTrack, pandoraShower,
+      pandoracalo, pandorapid
+      #pmatrack
+      #, pmtrack, pmtrackcalo, pmtrackpid
+      #, pmtrajfit, pmtrajfitcalo, pmtrajfitpid
+      #, pmtracktc, pmtracktccalo, pmtracktcpid
+      #, pmtrajfittc, pmtrajfittccalo, pmtrajfittcpid
+      #shower reconstruction
+      #, blurredcluster, emtrkmichelid, emshower#, emshower3d, mergeemshower3d
+   ]
+
+   #define the output stream, there could be more than one if using filters
+   stream1:  [ out1 ]
+
+   trigger_paths: [ reco ]
+
+   end_paths: [ analysis ]
+}
+
+#outputs:{}

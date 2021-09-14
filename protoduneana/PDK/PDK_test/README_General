@@ -1,0 +1,40 @@
+
+ mydev/srcs/dunendk
+ ==================
+- contains analyzer module
+- originally taken from ssh://p-dunendk@cdcvs.fnal.gov/cvs/projects/dunendk or https://cdcvs.fnal.gov/redmine/projects/dunendk
+- using a custom branch vpec_dedxvsrange which has not been pushed back to the repo
+
+ fcl/NDKAnalysis_wHitReco_wPandoraReco_wTruthMatching.fcl
+ fcl/NDKAnalysis_wHitReco_wPandoraReco_wTruthMatching_cheated.fcl
+ ==========================================
+- sets up redoing pandora reco
+- and sets up 'NDKAnaKsearch' module
+- tries to match tracks with the true particles... or maybe even the dE/dx deps
+- 'cheat' version: cheated reconstruction: hit clustering is done based on truth matching
+
+
+ dunendk/ndkAna/NDKAnaKsearch_module.cc
+ ======================================
+- this file was deleted, not sure why, I can't remember what the difference was between this and NDKAna_module.cc
+- it should be recoverable from the last git commit
+
+ jobs/
+ =====
+- workspace from which jobs were submitted
+- README file there has some info on the versions of dunendk used, not sure how it matches what's in mydev/
+
+ mydev/srcs/dunendk/scripts/Template_PIDloglike_range.cpp
+ ========================================================
+- this one is supposed to create log-likelihood templates used to discriminate between de/dx-vs-range of protons in atmo-nu background and kaons in PDK signal
+- makefiles should have the necessary configuration to 'make' the target
+
+ scripts/min2tracks/createBDTinput.C
+ ===================================
+- creates input needed to run BDT
+- uses log-likelihood templates of signal and background to calculate LL-ratio testing hypothesis that the selected kaon track is really the signal kaon agains the hypothesis that it's a proton from a background event
+
+
+ scripts/min2tracks/runMVA.C
+ ===========================
+- runs the BDT training and testing

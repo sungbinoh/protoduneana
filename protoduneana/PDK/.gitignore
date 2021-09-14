@@ -1,0 +1,4 @@
+*.root
+*.png
+# PDK_test/MC_Files
+MC_Files

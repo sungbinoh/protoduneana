@@ -1,0 +1,53 @@
+Header files:
+=============
+
+Analyser.h
+----------
+ - allows for cuts, gets longest and shortest track, can check if
+ Kmu2, would cut on 2 tracks - strict or min, finds direction of the
+ long and short tracks as reconstructed (short 1 if points to common
+ vertex, long 1 if points away from common vertex), would make cut on
+ mu len, does other truth related cuts, checks if calo res range
+ reversed or not
+ - used in many (maybe all) plotting scripts
+
+EventDisplay.h
+---------------
+ - creates a window with 3 views, overlaying MC truth trajectory
+ points with track hit points
+ - used in Scan.C
+
+EventSelector.h
+EventSelector_2plane_bestplanecut.h
+EventSelector_3plane.h
+EventSelector_3plane_bestplanecut.h
+EventSelector_Trim.h
+---------------
+ - looks to be the same as Analyser.h loads in the template
+ - min2tracks version finds appropriate pair of tracks
+ - used in the script that processes events and generates double LL
+ ratios
+ - _Trim version in trimTree.C
+ - min2tracks version used in all min2tracks scripts
+
+NDKAna_v3.h
+-----------
+ - don't know... created it at some point because changed the data
+ model. But now obsolete as include/NDKAna.h has been updated... I
+ think
+
+Processor.h
+-----------
+ - used in plotRanges.C
+ - looks the same as Analyser and EventSelector.C
+
+
+min2tracks/BDTTree.h
+====================
+ - the essential header for the BDT analysis
+ - defines all the variables to be stored
+ - provides methods to create a new tree with them or to register
+ an input tree
+ - all done in a way that it is easier to inlcude new variables, once
+ is enough, the variable is propagated into the event structure, and
+ the helper methods!

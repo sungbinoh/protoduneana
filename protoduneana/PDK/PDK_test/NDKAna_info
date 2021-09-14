@@ -1,0 +1,111 @@
+
+The data sample:
+ * SAM definition:  vpec_NNBarAtm_hA_BR_noCCTaus_dune10kt_1x2x6_reco
+ * dunetpc version: v08_37_00
+ * event count:     5114000
+ * content (words by Josh):
+    * based on Honda fluxes at 0.1-100 GeV at the Homestake site at solar max
+    * all oscillations are included for nominal best fit values (with taus)
+    * no CC nu_tau interactions due to bugs in GEANT that do not polarisation
+    * some spectral artifacts persist (e.g. due to energy binning of flux)
+ * GENIE version: 3.0.6 (independently from what LArSoft offers)
+ * nuclear model: hA Intranuke 2018 and the “default” relativistic nonlocal
+   Bodek-Ritchie Fermi gas (this does not matter much to us)
+
+INFO about NDKAna
+
+eventNo: # of the event There are 5114000 events in the sample which only  were analised in the ndk_test.root file
+
+======= Neutrino True Information ===========
+
+MC_Ev: Neutrino Momentum
+MC_Q2: Momentum squared transfered in the neutrino interaction (True informaiton)
+MC_cc: 1 for CC neutrino interaction, 0 for NC interaction
+MC_nuPDG: Neutrino flavor (check PDG for number)
+MC_hit_nucleon: The interaction was with proton or neutron?
+
+
+======= Other Particles True Information ========
+
+mcgenie_npart: # of particles in each event
+mcgenie_id: Id for each particle track
+mcgenie_fata: ReScatter ?????
+MCgenie_statusCode: Get at the status code returned by GENIE, Geant4, etc
+MCgenie_pdg: PDG number for particles 
+MCgenie_mother: Is a mother particle? yes -> 0 , No -> Mother number
+MCgenie_startMomentum: Start Momentum
+MCgenie_endMomentum: End Momentum
+
+======== G4 True Information ===================
+
+MC_vertex: True Vertex Position 
+MC_npart: # Particles
+MC_id: Track ID of each particle
+MC_pdg: PDG Number for particles
+MC_statusCode: Get at the status code returned by GENIE, Geant4, etc
+MC_mother: Is a mother particle? yes -> 0 , No -> Mother number
+MC_startXYZT: Start Position of the track
+MC_endXYZT: End Position of the Track
+MC_startMomentum: Start Momentum of the Track
+MC_endMomentum: End Momentum of the track
+MC_Prange: ------------------ not implemented
+MC_truthlength: Length of the track
+MC_process: Process that created the particle -> Mother Particle = "primary"
+MC_Endprocess: Process that destroy the particle
+
+========= RECO Information =======================
+
+n_vertices: # vertices reconstructed 
+vertex: position of the vertex
+vtx_ID: vertex ID
+n_recoTracks: # tracks reconstructed
+n_decayVtx: # vertex from decays
+decayVtx: position of the decay vertex
+vtxID_trk: vertex track ID
+track_vtx: track vertex position
+track_vtxDir: vertex direction
+track_end: track End
+track_isContained: Is the whole track inside the detector?
+track_ID: track Id
+track_length: Length of track reconstructed
+track_PIDA: PIDA value of the track
+track_PID_pdg: Pdg number from anab::ParticleID algorithm
+track_KE: Total Kinectic Energy
+track_Prange: P = momentum Range, Momentum Calculated assuming the range from Track and a particle, in this case muon
+track_bestplane: I didnt understand, it is a estimation of the best plane based on "Degrees of Freedom" ??? 
+n_cal_points: # of points where were deposited energy in the best plane
+track_dQ_dx: Energy deposited with no correction
+track_dE_dx: Energy deposited 
+track_range: Residual Range
+track_pitch: track pitch on the collect plane
+track_complet: ratio between the amount of energy deposited by the particle that deposited more energy and the total energy deposited in the event (incluind depositions that were not reconstructed as belonging to a particle track)
+track_Efrac: ratio between the amount of energy deposited by the particle that deposited more energy and the total energy deposited by all particles
+track_mcID: mc Id track (Truth information) used to compare with reco
+track_mcPDG: # pdg particle used to compare with reco info
+
+
+//to included hit and CNN output info into the analysis module
+//to quantify how much EM activity we have in order to reduce background
+
+Em_ch: Sum over all signals from tpc hits (ADC units I think)
+Em_e:  Sum over all signals from tpc hits (GeV units I think)
+trk_e: Sum over all signals from tpc hits (GeV units I think), If is in PIDA range, than it is considered a track 
+Emichel_e: --------  not implementd
+
+n_showers: #  Showers reconstructed
+sh_direction_X: Shower x direction
+sh_direction_Y:  Shower y direction
+sh_direction_Z: Shower z direction
+sh_start_X: Shower x position start
+sh_start_Y: Shower y position start
+sh_start_Z: Shower z position start
+sh_energy: Shower energy
+sh_MIPenergy: Energy deposion per plane
+sh_dEdx: Energy Deposition in MeV
+sh_bestplane: bestplane ??? ( collect plane??)
+sh_length: Length of the Shower (cm)
+
+
+
+
+
