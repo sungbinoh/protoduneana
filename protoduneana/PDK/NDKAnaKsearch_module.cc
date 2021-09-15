@@ -1152,10 +1152,7 @@ namespace DUNE {
     vector<Ptr<Track>> tracklist;
     if (event.getByLabel(fTrackModuleLabel, trackListHandle))
       fill_ptr_vector(tracklist, trackListHandle);
-    cout << "here n_recoTracks is " << n_recoTracks << " and tracklist.size() is " << tracklist.size() << endl;
-    n_recoTracks = tracklist.size();
-    cout << "now n_recoTracks is " << n_recoTracks << " and tracklist.size() is " << tracklist.size() << endl;
-    if(n_recoTracks > MAX_TRACKS || n_recoTracks == 0) {
+    if(tracklist.size() > MAX_TRACKS || tracklist.size() == 0) {
       n_recoTracks = 0; // make sure we don't save any fake data
       return;
     }
@@ -1163,7 +1160,6 @@ namespace DUNE {
     FindManyP<Vertex> trk_from_vtx(trackListHandle, event, "pmtrack");
     // FindManyP<Vertex> trk_from_vtx(trackListHandle,event,"pandora");
     // FindManyP<Vertex> trk_from_vtx(trackListHandle,event,fTrackModuleLabel);
-    cout << "after getting vertex assns n_recoTracks is " << n_recoTracks << endl;
 
     Handle< vector<Vertex> > vtxListHandle;
     vector<Ptr<Vertex>> vtxlist;
@@ -1171,7 +1167,6 @@ namespace DUNE {
     // if(event.getByLabel("pandora", vtxListHandle))
     // if(event.getByLabel(fTrackModuleLabel, vtxListHandle))
       fill_ptr_vector(vtxlist, vtxListHandle);
-    cout << "after getting vertices n_recoTracks is " << n_recoTracks << endl;
 
     n_vertices = vtxlist.size();
     if (n_vertices != 0) {
@@ -1183,28 +1178,24 @@ namespace DUNE {
       }
     }
 
-    cout << "before getting hit assns n_recoTracks is " << n_recoTracks << endl;
     FindManyP<Hit> track_hits(trackListHandle, event, fTrackModuleLabel);
     art::FindMany<Calorimetry> reco_cal(trackListHandle, event, fCaloModuleLabel);
     trkf::TrackMomentumCalculator trackP;
-    cout << "after getting hit assns n_recoTracks is " << n_recoTracks << endl;
 
     art::FindMany<ParticleID> reco_PID(trackListHandle, event, fPidModuleLabel);
-    cout << "after getting particle assns n_recoTracks is " << n_recoTracks << endl;
 
     Handle<vector<Hit>> HitHandle;
     vector<Ptr<Hit>> all_hits;
     if(event.getByLabel(fHitModuleLabel, HitHandle))
       fill_ptr_vector(all_hits, HitHandle);
-    cout << "after getting hits n_recoTracks is " << n_recoTracks << endl;
 
-    for (int i = 0; i < n_recoTracks; ++i) {
-      // if (n_recoTracks != 2) { cout << "More Than 2 Tracks!! " << endl; continue;}
+    n_recoTracks = tracklist.size();
+
+    for (size_t i = 0; i < tracklist.size(); ++i) {
+      // if (tracklist.size() != 2) { cout << "More Than 2 Tracks!! " << endl; continue;}
       Ptr<Track> track = tracklist[i];
 
       // vtx associations
-      cout << "size of tracklist is " << tracklist.size() << " n_recoTracks is " << n_recoTracks
-        << ", size of trk_from_vtx is " << trk_from_vtx.size() << ", i is " << i << endl;
       vector<Ptr<Vertex>> vtxs = trk_from_vtx.at(i);
       for (size_t j = 0; j < vtxs.size(); ++j) {
         Ptr<Vertex> vtx = vtxs[j];
@@ -1245,8 +1236,6 @@ namespace DUNE {
       if (track_isInside) track_isContained[i] = 1;
       else track_isContained[i] =0;
       //calculate PID
-      cout << "size of Reco PID is " << reco_PID.size() << ", n_RecoTracks is " << n_recoTracks
-        << ", size of Reco Cal is " << reco_cal.size() << endl;
       vector<const Calorimetry*> trk_cal = reco_cal.at(i);
       vector<const ParticleID*> trk_pid = reco_PID.at(i);
       int plane0 = trk_pid[0]->Ndf();
@@ -1280,7 +1269,7 @@ namespace DUNE {
       //   track_PID_pdg[i][2] = track_PID_pdg[i][2];
       // } else { track_PID_pdg[i][2] = 28; }
 
-      // if (n_recoTracks !=2) continue; 
+      // if (tracklist.size() !=2) continue; 
       h_track_length->Fill(track->Length());
       cout << "Reco Track Lengths " << track->Length() << endl;
    
