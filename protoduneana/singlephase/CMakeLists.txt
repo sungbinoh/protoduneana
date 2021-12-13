@@ -1,4 +1,5 @@
 add_subdirectory(XYZcalibration)
+add_subdirectory(StopMuon)
 add_subdirectory(michelremoving)
 add_subdirectory(protonanalysis)
 add_subdirectory(pionanalysis)
