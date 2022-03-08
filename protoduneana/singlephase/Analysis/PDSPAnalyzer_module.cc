@@ -419,7 +419,6 @@ private:
   double reco_beam_endX, reco_beam_endY, reco_beam_endZ;
   double true_beam_len;
   double reco_beam_len, reco_beam_alt_len;
-  double true_beam_len;
   int for_truncation_method;
   double reco_beam_alt_len_allTrack;
   double reco_beam_vertex_michel_score;
