@@ -60,7 +60,8 @@ int main(int argc, char *argv[]) {
     gr[i]->Draw("ap");
     //gr[i]->GetXaxis()->SetRangeUser(bestx-0.002e-3, bestx+0.002e-3);
     //gr[i]->GetYaxis()->SetRangeUser(0, miny+10);
-    gr[i]->Fit("pol2","RQ","",bestx-0.002e-3, bestx+0.002e-3);
+    //gr[i]->Fit("pol2","RQ","",bestx-0.002e-3, bestx+0.002e-3);
+    gr[i]->Fit("pol2","RQ","",bestx-0.003e-3, bestx+0.003e-3); // -- SB debug
     TF1 *fun = (TF1*)gr[i]->FindObject("pol2");
     double a = fun->GetParameter(0);
     double b = fun->GetParameter(1);
@@ -69,8 +70,10 @@ int main(int argc, char *argv[]) {
     double chisq0 = fun->Eval(C0);
     double C1 = (-b-sqrt(b*b-4*c*(a-chisq0-1)))/(2*c);
     double C2 = (-b+sqrt(b*b-4*c*(a-chisq0-1)))/(2*c);
-    double x1 = C0-(C0-C1)*3;
-    double x2 = C0+(C0-C1)*3;
+    //double x1 = C0-(C0-C1)*3;
+    //double x2 = C0+(C0-C1)*3;
+    double x1 = C0-(C0-C1)*10; // -- SB debug
+    double x2 = C0+(C0-C1)*10; // -- SB debug
     double y1 = fun->Eval(x1);
     double y2 = fun->Eval(x2);
     gr[i]->GetXaxis()->SetRangeUser(x1,x2);

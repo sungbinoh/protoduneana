@@ -56,6 +56,7 @@ const double rho=1.396;//g/cm^3
 string outfile_name;
 string sce;
 TString mn = "2";
+bool use_Birk_model = true;
 
 double spline_KE[13];
 double spline_Range[13];
@@ -383,7 +384,21 @@ Float_t Dedx(float dqdx, float Ef){
 //  double alpha = 0.912;//parameter from ArgoNeuT experiment at 0.481kV/cm 
 //  double betap = 0.195;//(kV/cm)(g/cm^2)/MeV
 
+  //cout << "SB debug [Dedx] dqdx : " << dqdx << ", Ef : " << Ef << endl;
+
   return (exp(dqdx*(betap/(Rho*Ef)*Wion))-alpha)/(betap/(Rho*Ef));
+}
+
+Float_t Dedx_Birk(float dqdx, float Ef){
+  double Rho = 1.383; // == g/cm^3 (liquid argon density at a pressure 18.0 psia)
+  double Wion = 23.6e-6; // == MeV from ArgoNeuT experiment at 0.481kV/cm
+  //double A_B = 0.806; //  == ArgoNeuT :  at 0.481kV/cm
+  //double k_B = 0.052; // == ArgoNeuT (kV/cm)(g/cm2 )/MeV
+  double A_B = 0.800; // == ICARUS : at 200, 350, 500 V/cm
+  double k_B = 0.0486; // == ICARUS (kV/cm)(g/cm2 )/MeV 
+
+  return( dqdx / ( (A_B/Wion) - k_B * (dqdx /(Rho * Ef) )) );
+
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -653,6 +668,7 @@ void protoDUNE_dEdx_calib::Loop(int hitplane, double norm_factor, double calib_f
   myfile1.open(Form("muon_mpv_0.50_r%d.txt",run));
   for (int i=0; i<nbin; i++){
     std::cout << "Fitting ************** " << i << std::endl;
+    std::cout << "testest" << std::endl;
     Thke.push_back(sp->Eval(i*binsize+double(binsize)/2));
     Theng.push_back(dpdx(sp->Eval(i*binsize+double(binsize)/2),pitchvalue,Mmu));
     myfile1<<i*binsize+double(binsize)/2<<"  "<<dpdx(sp->Eval(i*binsize+double(binsize)/2),pitchvalue,Mmu)<<endl;
@@ -1051,14 +1067,20 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
                                                 trkhity[i][ihitplane][j]));
 
             float corrected_dq_dx = trkdqdx[i][ihitplane][j]*Cx*norm_factors[ihitplane]*Cyz;
+	    //cout << "SB debug, trkdqdx[i][ihitplane][j] : " << trkdqdx[i][ihitplane][j] << ", Cx : " << Cx << ", Cyz : " << Cyz << ", norm_factors[ihitplane] : " << norm_factors[ihitplane] << ", corrected_dq_dx : " << corrected_dq_dx << endl;
             for (size_t i_cal = 0; i_cal < calib_factors[ihitplane].size(); ++i_cal) {
               float scaled_corrected_dq_dx = corrected_dq_dx/calib_factors[ihitplane][i_cal]; //// replace with vector index
+	      //cout  << "SB debug, calib_factors[ihitplane][i_cal] : " << calib_factors[ihitplane][i_cal] << endl;
               float cal_de_dx = Dedx(
                   scaled_corrected_dq_dx,
                   tot_Ef(trkhitx[i][ihitplane][j],
                          trkhity[i][ihitplane][j],
                          trkhitz[i][ihitplane][j]));
-
+	      float cal_de_dx_Birk = Dedx_Birk(
+		  scaled_corrected_dq_dx,
+		  tot_Ef(trkhitx[i][ihitplane][j],
+			 trkhity[i][ihitplane][j],
+			 trkhitz[i][ihitplane][j]));
               avgke[ihitplane]+=ke;
               avgdx[ihitplane]+=trkpitch[i][ihitplane][j];
               ++nhits[ihitplane];
@@ -1067,8 +1089,10 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
               size_t bin = size_t(ke/binsize);
               //std::cout << "Bin: " << bin << std::endl;
               if(bin < nbin){
-                dedx[ihitplane][i_cal][bin]->Fill(cal_de_dx);
-                //std::cout << "Filling " << ihitplane << " " << i_cal << " " << bin << std::endl;
+		//cout << "SB degub, [LoopLite] Box model : " << cal_de_dx << ", Birk model : "  << cal_de_dx_Birk << endl;
+		if(use_Birk_model) dedx[ihitplane][i_cal][bin]->Fill(cal_de_dx_Birk);
+                else dedx[ihitplane][i_cal][bin]->Fill(cal_de_dx);
+                //std::cout << "Filling " << ihitplane << " " << i_cal << " " << bin << " with " << cal_de_dx <<std::endl;
               } // x containment....
             }
           } // y containment.....
@@ -1095,13 +1119,18 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
     for (size_t j = 0; j < calib_factors[i].size(); ++j) {
       vector<double> chi_denominator;
       vector<double> chi_numerator;
+      chi_denominator.clear();
+      chi_numerator.clear();
       int dof=0;
       for (size_t k = 0; k < nbin; k++){
         if (!dedx[i][j][k]->GetEntries()) continue;
         std::cout << "Fitting ************** " << k << std::endl;
-        /*
-        Double_t fr[2];
-        Double_t sv[4], pllo[4], plhi[4], fp[4], fpe[4];
+	//std::cout << "SB test ******* i, j, k = " << i << ", " << j << ", " << k << std::endl; 
+	//dedx[i][j][k]->Write(); // -- SB debug
+	/*
+	  
+     Double_t fr[2];
+     Double_t sv[4], pllo[4], plhi[4], fp[4], fpe[4];
         fr[0]=1.1;//this was originally 0.
         fr[1]=10.;
         if (dedx[i][j][k]->GetMean()<10){
@@ -1125,8 +1154,10 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
         Int_t    ndf;
         Int_t    status;
         TF1 *fitsnr = langaufit(dedx[i][j][k],fr,sv,pllo,plhi,fp,fpe,&chisqr,&ndf,&status);
-        */
+	*/
+	//std::cout << "SB start runlangaufit ******* " << k << std::endl;
         TF1 *fitsnr = runlangaufit(dedx[i][j][k], i);
+	//std::cout << "SB done runlangaufit ******* " << k << std::endl;
 //        cout <<"************ Fit status (FitPtr): " << status << " *********"<<endl;
 //        fitsnr->SetLineColor(kRed);
 //        std::cout << "************** MPV : " << fitsnr->GetParameter(1) << " +/- " << fitsnr->GetParError(1) << std::endl;
@@ -1135,7 +1166,7 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
         if((k*binsize+double(binsize)/2)<=450 && (k*binsize+double(binsize)/2)>=250){
           dof++;
           if((dedx[i][j][k]->GetEntries()>100) && fitsnr->GetNDF() != 0 && (fitsnr->GetParError(1)<1000) && (fitsnr->GetChisquare()/fitsnr->GetNDF()<10)){
-          //cout<<" i "<<i<<" res range "<<i*binsize+double(binsize)/2<<"  KE "<<sp->Eval(i*binsize+double(binsize)/2)<<endl;
+          cout<<" i "<<i<<" res range "<<i*binsize+double(binsize)/2<<"  KE "<<sp->Eval(i*binsize+double(binsize)/2)<<endl;
 
           ////////////////////////////////////////////// Chi 2 calculation ////////////////////////////
               
@@ -1151,6 +1182,7 @@ void protoDUNE_dEdx_calib::LoopLite(std::vector<double> & norm_factors,
             cout<<dedx[i][j][k]->GetEntries()<<" "<<fitsnr->GetNDF()<<" "<<fitsnr->GetParError(1)<<" "<<fitsnr->GetChisquare()<<" "<<fitsnr->GetNDF()<<endl;
           }
         }
+
       }
       double sum=0;
 

@@ -38,8 +38,8 @@ Double_t langaufun(Double_t *x, Double_t *par) {
   return (par[2] * step * sum * invsq2pi / par[3]);
 }
 
- TF1 *langaufit(TH1 *his, Double_t *fitrange, Double_t *startvalues, Double_t *parlimitslo, Double_t *parlimitshi, Double_t *fitparams, Double_t *fiterrors, Double_t *ChiSqr, Int_t *NDF, Int_t *Status){
-
+TF1 *langaufit(TH1 *his, Double_t *fitrange, Double_t *startvalues, Double_t *parlimitslo, Double_t *parlimitshi, Double_t *fitparams, Double_t *fiterrors, Double_t *ChiSqr, Int_t *NDF, Int_t *Status){
+  //cout << "SB debug [langaufit] start" << endl;
   Int_t i;
   Char_t FunName[100];
 
@@ -59,6 +59,7 @@ Double_t langaufun(Double_t *x, Double_t *par) {
 //  his->Fit(FunName,"RB0");   // fit within specified range, use ParLimits, do not plot
   //his->SetStats(0);
   TFitResultPtr fitres = his->Fit(FunName,"RBOSQ"); // fit within specified range, use ParLimits, do not plot /////////////////// Initial code use the mode "RBO" (commented by VARUNA) ///////////
+  //cout<< "SB debug [langaufit] fitted, calling fit parameters"<< endl;
 
   ffit->GetParameters(fitparams);    // obtain fit parameters
   for (i=0; i<4; i++) {

@@ -12,17 +12,17 @@ files = samweb.listFiles("defname: %s " % (sys.argv[1]))
 
 run = -1
 totalevts = -1
-#print files
+print files
 for file in files:
-    #print (file)
+    print (file)
     loc = samweb.locateFile(file)
     if run == -1:
         metadata = samweb.getMetadata(file)
-        #print (metadata)
+        print (metadata)
         if metadata['file_type'] != 'mc':
             totalevts = 0
             run = metadata['runs'][0][0]
-            #print (run)
+            print (run)
         else:
             totalevts = 0
             run = 0
@@ -30,14 +30,14 @@ for file in files:
     pnfs = loc[0]['full_path'][8:]
     stream = os.popen("pnfsToXRootD %s/%s" % (pnfs,file))
     xroot = stream.read()
-    #print(xroot)
+    print(xroot)
     tfile = TFile.Open(xroot.strip())
     mytree = gDirectory.Get('michelremoving2/Event')
     totalevts += mytree.GetEntries()
-    #print(mytree.GetEntries())
-    #print (xroot)
+    print(mytree.GetEntries())
+    print (xroot)
     f.write(xroot)
-    #print("File name: %s, total events: %s" % (file, totalevts))
-#f.close()
+    print("File name: %s, total events: %s" % (file, totalevts))
+f.close()
 
 print(totalevts)
