@@ -1,5 +1,22 @@
 ## Calibration instructions
 
+### To access files in xrootd, actived a grid proxy
+```
+kx509
+export EXPERIMENT=dune
+export ROLE=Analysis
+voms-proxy-init -rfc -noregen -voms dune:/dune/Role=$ROLE -valid 24:00
+```
+or
+```
+
+```
+
+### Copy input files from tapes to storage
+```
+samweb prestage-dataset --defname=PDSPProd4a_MC_1GeV_michelremoving_sce_datadriven_merged_v1
+```
+
 ### List input files
 
 ```
