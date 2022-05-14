@@ -120,7 +120,7 @@ float zoffsetbd(float xval,float yval,float zval){
 
 void protoDUNE_validate_calib::Loop(int mn)
 {
-
+  //cout << "SB debug [protoDUNE_validate_calib::Loop] loop starts" << endl;
   if (fChain == 0) return;
   fChain->GetEntry(0);
   if (run>10000) run = 0;
@@ -143,6 +143,7 @@ void protoDUNE_validate_calib::Loop(int mn)
   TFile *my_file, *my_file2;
 
   if (recalib){
+    //cout << "SB debug [protoDUNE_validate_calib::Loop] recalib" << endl;
     ifstream in;
     for (int i = 0; i<3; ++i){
       in.open(Form("global_median_%d_r%d.txt",i, run));
@@ -684,6 +685,7 @@ int main(int argc, char *argv[]) {
   TChain* shtree = new TChain("Event");
 
   if (infile.substr(infile.find_last_of(".") + 1) == "root"){
+    //cout << "SB debug [main] open file" << endl;
     shtree->Add(Form("%s/michelremoving%d/Event", infile.c_str(), michelnumber));
   }
 
@@ -695,13 +697,17 @@ int main(int argc, char *argv[]) {
     while(1){
       in.getline(line,1024);
       if (!in.good()) break;
+      //cout << "SB debug [main] open file : " << Form("%s/michelremoving%d/Event", line, michelnumber) << endl;
       shtree->Add(Form("%s/michelremoving%d/Event", line, michelnumber));
     }
     in.close();
     in.clear();
   }
-
+  
+  //cout << "SB debug [main] call tree"<< endl;
+  //shtree -> Print();
   protoDUNE_validate_calib t(shtree);
   
+  //cout << "SB debug [main] call loop function"<< endl;
   t.Loop(michelnumber);
 } // main

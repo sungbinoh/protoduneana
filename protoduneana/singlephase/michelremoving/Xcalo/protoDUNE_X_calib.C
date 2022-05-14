@@ -32,6 +32,7 @@ float bet=0.212;
 //float dedx=2.08;
 float dedx=1.9;
 bool userecom=true;
+bool useBirksModel=false;
 bool sceon = true;
 float recom_factor(float totEf){
   if (!userecom) return 1;
@@ -40,6 +41,20 @@ float recom_factor(float totEf){
   float rec0=log(alp+xsi0)/xsi0;
   return (rec0*xsi)/log(alp+xsi);
 }
+double recom_factor_Birks(float totEF){
+  if (!userecom) return 1;
+  double Rho = 1.383; // == g/cm^3 (liquid argon density at a pressure 18.0 psia)
+  //double A_B = 0.806; //  == ArgoNeuT :  at 0.481kV/cm
+  //double k_B = 0.052; // == ArgoNeuT (kV/cm)(g/cm2 )/MeV
+  //double A_B = 0.800; // == ICARUS : at 200, 350, 500 V/cm
+  double k_B = 0.0486; // == ICARUS (kV/cm)(g/cm2 )/MeV
+  
+  double dQdx_SCE = 1. / (1 + k_B * dedx / (Rho * totEF));
+  double dQdx_nominal = 1. / (1 + k_B * dedx / (Rho * 0.4867));
+
+  return dQdx_SCE / dQdx_nominal;
+}
+
 TFile *ef = TFile::Open("$DUNE_PARDATA_DIR/SpaceChargeProtoDUNE/SCE_DataDriven_180kV_v4.root");
 TH3F *xneg=(TH3F*)ef->Get("Reco_ElecField_X_Neg");
 TH3F *yneg=(TH3F*)ef->Get("Reco_ElecField_Y_Neg");
@@ -108,15 +123,15 @@ void protoDUNE_X_calib::Loop(TString mn)
 
   ///plane_2 details
   TH1F *dqdx_X_hist_2 = new TH1F("dqdx_X_hist_2","plane_2;X Coordinate(cm);dQ/dx(ADC/cm)",144,-360,360);
-  TH1F *dedx_X_hist_2 = new TH1F("dedx_X_hist_2","plane_2;X Coordinate(cm);dE/dx(ADC/cm)",144,-360,360);
+  TH1F *dedx_X_hist_2 = new TH1F("dedx_X_hist_2","plane_2;X Coordinate(cm);dE/dx(MeV/cm)",144,-360,360);
   TH1F *dqdx_X_correction_hist_2 = new TH1F("dqdx_X_correction_hist_2","plane_2;X Coordinate(cm);X Correction factors",144,-360,360);
   TH1F *corrected_dqdx_X_hist_2 = new TH1F("corrected_dqdx_X_hist_2","plane_2;X Coordinate(cm);dQ/dx(ADC/cm)",144,-360,360);
   TH1F *dqdx_X_hist_1 = new TH1F("dqdx_X_hist_1","plane_1;X Coordinate(cm);dQ/dx(ADC/cm)",144,-360,360);
-  TH1F *dedx_X_hist_1 = new TH1F("dedx_X_hist_1","plane_1;X Coordinate(cm);dE/dx(ADC/cm)",144,-360,360);
+  TH1F *dedx_X_hist_1 = new TH1F("dedx_X_hist_1","plane_1;X Coordinate(cm);dE/dx(MeV/cm)",144,-360,360);
   TH1F *dqdx_X_correction_hist_1 = new TH1F("dqdx_X_correction_hist_1","plane_1;X Coordinate(cm);X Correction factors",144,-360,360);
   TH1F *corrected_dqdx_X_hist_1 = new TH1F("corrected_dqdx_X_hist_1","plane_1;X Coordinate(cm);dQ/dx(ADC/cm)",144,-360,360);
   TH1F *dqdx_X_hist_0 = new TH1F("dqdx_X_hist_0","plane_0;X Coordinate(cm);dQ/dx(ADC/cm)",144,-360,360);
-  TH1F *dedx_X_hist_0 = new TH1F("dedx_X_hist_0","plane_0;X Coordinate(cm);dE/dx(ADC/cm)",144,-360,360);
+  TH1F *dedx_X_hist_0 = new TH1F("dedx_X_hist_0","plane_0;X Coordinate(cm);dE/dx(MeV/cm)",144,-360,360);
   TH1F *dqdx_X_correction_hist_0 = new TH1F("dqdx_X_correction_hist_0","plane_0;X Coordinate(cm);X Correction factors",144,-360,360);
   TH1F *corrected_dqdx_X_hist_0 = new TH1F("corrected_dqdx_X_hist_0","plane_0;X Coordinate(cm);dQ/dx(ADC/cm)",144,-360,360);
   //TH2F *dqdx_vs_X=new TH2F("dqdx_vs_X","dQ/dx vs X for all T0 tagged throughgoing muons;X coordinate(cm);dQ/dx(ADC/cm)",760,-380,380,1000,0,1000);
@@ -219,7 +234,9 @@ void protoDUNE_X_calib::Loop(TString mn)
 		if(trkhitx[i][2][j]<0 && trkhitx[i][2][j-1]>0) continue;
 		x_bin=dqdx_X_hist_2->FindBin(trkhitx[i][2][j]);
 		float YZ_correction_factor_negativeX_2=YZ_negativeX_hist_2->GetBinContent(YZ_negativeX_hist_2->FindBin(trkhitz[i][2][j],trkhity[i][2][j]));
-		float recom_correction=recom_factor(tot_Ef(trkhitx[i][2][j],trkhity[i][2][j],trkhitz[i][2][j]));
+		float recom_correction = 1.;
+		if(useBirksModel) {recom_correction = recom_factor_Birks(tot_Ef(trkhitx[i][2][j],trkhity[i][2][j],trkhitz[i][2][j]));}
+		else{ recom_correction = recom_factor(tot_Ef(trkhitx[i][2][j],trkhity[i][2][j],trkhitz[i][2][j]));}
 		float corrected_dqdx_2=trkdqdx[i][2][j]*YZ_correction_factor_negativeX_2*recom_correction;
 		if (mn!="3") dqdx_value_2[x_bin-1].push_back(corrected_dqdx_2);
                 else dqdx_value_2[x_bin-1].push_back(trkdqdx[i][2][j]);
@@ -232,7 +249,9 @@ void protoDUNE_X_calib::Loop(TString mn)
 		if(trkhitx[i][2][j]>0 && trkhitx[i][2][j-1]<0) continue;
 		x_bin=dqdx_X_hist_2->FindBin(trkhitx[i][2][j]);
 		float YZ_correction_factor_positiveX_2=YZ_positiveX_hist_2->GetBinContent(YZ_positiveX_hist_2->FindBin(trkhitz[i][2][j],trkhity[i][2][j]));
-		float recom_correction=recom_factor(tot_Ef(trkhitx[i][2][j],trkhity[i][2][j],trkhitz[i][2][j]));
+		float recom_correction = 1.;
+		if(useBirksModel) {recom_correction = recom_factor_Birks(tot_Ef(trkhitx[i][2][j],trkhity[i][2][j],trkhitz[i][2][j]));}
+                else{ recom_correction = recom_factor(tot_Ef(trkhitx[i][2][j],trkhity[i][2][j],trkhitz[i][2][j]));}
 		float corrected_dqdx_2=trkdqdx[i][2][j]*YZ_correction_factor_positiveX_2*recom_correction;
                 //std::cout<<TrkID[i]<<" "<<trkhitx[i][2][j]<<" "<<trkhity[i][2][j]<<" "<<trkhitz[i][2][j]<<" "<<YZ_correction_factor_positiveX_2<<" "<<trkdqdx[i][2][j]<<" "<<corrected_dqdx_2<<std::endl;
 		if (mn!="3") dqdx_value_2[x_bin-1].push_back(corrected_dqdx_2);
@@ -247,9 +266,10 @@ void protoDUNE_X_calib::Loop(TString mn)
       }//angular cut
     
 
+      //// == Angular cut for plane 0 and 1
+      //if(((abs(180/TMath::Pi()*trackthetaxz[i])>60 && abs(180/TMath::Pi()*trackthetaxz[i])<120))) continue;
 
       ////plane_1
-
       for(int j=1; j<TMath::Min(ntrkhits[i][1]-1,3000); ++j){
 	if((trkhity[i][1][j]<600)&&(trkhity[i][1][j]>0)){
 	  if((trkhitz[i][1][j]<695)&&(trkhitz[i][1][j]>0)){
@@ -258,8 +278,10 @@ void protoDUNE_X_calib::Loop(TString mn)
 	    	if(trkhitx[i][1][j]<0 && trkhitx[i][1][j+1]>0) continue;
 		if(trkhitx[i][1][j]<0 && trkhitx[i][1][j-1]>0) continue;
 		x_bin=dqdx_X_hist_1->FindBin(trkhitx[i][1][j]);
-		float recom_correction=recom_factor(tot_Ef(trkhitx[i][1][j],trkhity[i][1][j],trkhitz[i][1][j]));
-	     	float YZ_correction_factor_negativeX_1=YZ_negativeX_hist_1->GetBinContent(YZ_negativeX_hist_1->FindBin(trkhitz[i][1][j],trkhity[i][1][j]));
+		float recom_correction=1.;
+	     	if(useBirksModel) {recom_correction = recom_factor_Birks(tot_Ef(trkhitx[i][1][j],trkhity[i][1][j],trkhitz[i][1][j]));}
+                else{ recom_correction = recom_factor(tot_Ef(trkhitx[i][1][j],trkhity[i][1][j],trkhitz[i][1][j]));}
+		float YZ_correction_factor_negativeX_1=YZ_negativeX_hist_1->GetBinContent(YZ_negativeX_hist_1->FindBin(trkhitz[i][1][j],trkhity[i][1][j]));
 		float corrected_dqdx_1=trkdqdx[i][1][j]*YZ_correction_factor_negativeX_1*recom_correction;
 		if (mn!="3") dqdx_value_1[x_bin-1].push_back(corrected_dqdx_1);
                 else dqdx_value_1[x_bin-1].push_back(trkdqdx[i][1][j]);
@@ -273,7 +295,9 @@ void protoDUNE_X_calib::Loop(TString mn)
 	      if(trkhitx[i][1][j]>0 && trkhitx[i][1][j-1]<0) continue;
 	      if(abs(180/TMath::Pi()*trackthetaxz[i])<40){
 		x_bin=dqdx_X_hist_1->FindBin(trkhitx[i][1][j]);
-		float recom_correction=recom_factor(tot_Ef(trkhitx[i][1][j],trkhity[i][1][j],trkhitz[i][1][j]));
+		float recom_correction=1.;
+		if(useBirksModel) {recom_correction = recom_factor_Birks(tot_Ef(trkhitx[i][1][j],trkhity[i][1][j],trkhitz[i][1][j]));}
+                else{ recom_correction = recom_factor(tot_Ef(trkhitx[i][1][j],trkhity[i][1][j],trkhitz[i][1][j]));}
 		float YZ_correction_factor_positiveX_1=YZ_positiveX_hist_1->GetBinContent(YZ_positiveX_hist_1->FindBin(trkhitz[i][1][j],trkhity[i][1][j]));
 		float corrected_dqdx_1=trkdqdx[i][1][j]*YZ_correction_factor_positiveX_1*recom_correction;
 		if (mn!="3") dqdx_value_1[x_bin-1].push_back(corrected_dqdx_1);
@@ -296,7 +320,9 @@ void protoDUNE_X_calib::Loop(TString mn)
 		if(trkhitx[i][0][j]<0 && trkhitx[i][0][j+1]>0) continue;
 		if(trkhitx[i][0][j]<0 && trkhitx[i][0][j-1]>0) continue;
 		x_bin=dqdx_X_hist_0->FindBin(trkhitx[i][0][j]);
-		float recom_correction=recom_factor(tot_Ef(trkhitx[i][0][j],trkhity[i][0][j],trkhitz[i][0][j]));
+		float recom_correction=1.;
+		if(useBirksModel) {recom_correction = recom_factor_Birks(tot_Ef(trkhitx[i][0][j],trkhity[i][0][j],trkhitz[i][0][j]));}
+                else{ recom_correction = recom_factor(tot_Ef(trkhitx[i][0][j],trkhity[i][0][j],trkhitz[i][0][j]));}
 		float YZ_correction_factor_negativeX_0=YZ_negativeX_hist_0->GetBinContent(YZ_negativeX_hist_0->FindBin(trkhitz[i][0][j],trkhity[i][0][j]));
 		float corrected_dqdx_0=trkdqdx[i][0][j]*YZ_correction_factor_negativeX_0*recom_correction;
 		if (mn!="3") dqdx_value_0[x_bin-1].push_back(corrected_dqdx_0);
@@ -312,7 +338,9 @@ void protoDUNE_X_calib::Loop(TString mn)
 		if(trkhitx[i][0][j]>0 && trkhitx[i][0][j+1]<0) continue;
 		if(trkhitx[i][0][j]>0 && trkhitx[i][0][j-1]<0) continue;
 		x_bin=dqdx_X_hist_0->FindBin(trkhitx[i][0][j]);
-		float recom_correction=recom_factor(tot_Ef(trkhitx[i][0][j],trkhity[i][0][j],trkhitz[i][0][j]));
+		float recom_correction=1.;
+		if(useBirksModel) {recom_correction = recom_factor_Birks(tot_Ef(trkhitx[i][0][j],trkhity[i][0][j],trkhitz[i][0][j]));}
+                else{ recom_correction = recom_factor(tot_Ef(trkhitx[i][0][j],trkhity[i][0][j],trkhitz[i][0][j]));}
 		float YZ_correction_factor_positiveX_0=YZ_positiveX_hist_0->GetBinContent(YZ_positiveX_hist_0->FindBin(trkhitz[i][0][j],trkhity[i][0][j]));
 		float corrected_dqdx_0=trkdqdx[i][0][j]*YZ_correction_factor_positiveX_0*recom_correction;
 		if (mn!="3") dqdx_value_0[x_bin-1].push_back(corrected_dqdx_0);
@@ -520,7 +548,7 @@ int main(int argc, char *argv[]) {
     return 0;
     }
 
- if (michelnumber=="0") michelnumber = "";
+  if (michelnumber=="0") michelnumber = "";
   cout << Form("michelremoving%s/Event", michelnumber.c_str()) << endl;
 
   TChain* shtree = new TChain("Event");

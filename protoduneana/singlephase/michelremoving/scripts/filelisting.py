@@ -12,7 +12,7 @@ files = samweb.listFiles("defname: %s " % (sys.argv[1]))
 
 run = -1
 totalevts = -1
-print files
+#print files
 for file in files:
     print (file)
     loc = samweb.locateFile(file)

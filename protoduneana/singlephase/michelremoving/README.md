@@ -13,9 +13,14 @@ or
 ```
 
 ### Copy input files from tapes to storage
+#### A simple way
 ```
 samweb prestage-dataset --defname=PDSPProd4a_MC_1GeV_michelremoving_sce_datadriven_merged_v1
 ```
+#### A better way
+unsetup curl
+export X509_USER_PROXY=/tmp/x509up_u$(id -u)
+samweb run-project --defname=PDSPProd4a_MC_1GeV_michelremoving_sce_datadriven_merged_v1 --schema https 'echo %fileurl && curl -L --cert $X509_USER_PROXY --key $X509_USER_PROXY --cacert $X509_USER_PROXY --capath /etc/grid-security/certificates -H "Range: bytes=0-3" %fileurl && echo'
 
 ### List input files
 
@@ -39,11 +44,12 @@ make_yz_correction input_run0.txt 2
 ### X calibration
 
 ```
-make_x_correction input_run0.txt 2
+make_x_correction input_run0.txt 2 1
 ```
 
 - The first argument is the input file list created in the first step.
 - The second argument is the ID of the TTree. The number `2` takes the TTree `michelremoving2/Event`, which is after SCE and lifetime calibration.
+- The third argument is SCE on/off option, off when the argument is 0.
 - This should be run after YZ calibration and it takes the YZ calibration root file as an input.
 - This will creates two root files `Xcalo_mich2_r####.root` and `globalmedians_cathanode_r####.root` and three txt files `global_median_{0,1,2}_r####.txt`.
 
