@@ -1,0 +1,14 @@
+infile: "input_run_valid_with_TJ.txt"
+michelnumber: 2
+outfile: "validation_mich2_run_valid.root"
+recalib: true
+corr_end: false
+sceon: true
+xbins: 144
+xmin: -360
+xmax: 360
+rroffset: [
+0,
+0,
+0
+]

@@ -18,9 +18,11 @@ or
 samweb prestage-dataset --defname=PDSPProd4a_MC_1GeV_michelremoving_sce_datadriven_merged_v1
 ```
 #### A better way
+```
 unsetup curl
 export X509_USER_PROXY=/tmp/x509up_u$(id -u)
 samweb run-project --defname=PDSPProd4a_MC_1GeV_michelremoving_sce_datadriven_merged_v1 --schema https 'echo %fileurl && curl -L --cert $X509_USER_PROXY --key $X509_USER_PROXY --cacert $X509_USER_PROXY --capath /etc/grid-security/certificates -H "Range: bytes=0-3" %fileurl && echo'
+```
 
 ### List input files
 

@@ -302,7 +302,8 @@ void protoDUNE_validate_calib::Loop(int mn)
     real_nentries = nentries;
   }
   Long64_t nbytes = 0, nb = 0;
-  for (Long64_t jentry=0; jentry<nentries;jentry++) {
+  //for (Long64_t jentry=0; jentry<nentries;jentry++) { // == SB debug, the original code 
+  for (Long64_t jentry=0; jentry<1;jentry++) {// SB debug
     // for (Long64_t jentry=0; jentry<10000;jentry++) {
     Long64_t ientry = LoadTree(jentry);
     if (ientry < 0) break;
@@ -477,6 +478,7 @@ void protoDUNE_validate_calib::Loop(int mn)
                     if (x_bin<1) x_bin = 1;
                     if (x_bin>xbins) x_bin = xbins;
                   }
+		  cout << "SB debug, " << jentry << "'th event, (i,j,k) : (" << i << ", " << j << ", " << k << "), dqdx : " << corrected_dqdx << ", dedx : " << corrected_dedx;
                   if (recalib){  
                     float YZ_correction_factor_negativeX=YZ_negativeX_corr[j]->GetBinContent(YZ_negativeX_corr[j]->FindBin(trkhitz[i][j][k],trkhity[i][j][k]));
                     float X_correction_factor=X_corr[j]->GetBinContent(x_bin);
@@ -490,6 +492,7 @@ void protoDUNE_validate_calib::Loop(int mn)
                   dQdx_e = corrected_dqdx*calib_const[j];
                   dEdx = corrected_dedx;
                   E = tot_Ef(trkhitx[i][j][k],trkhity[i][j][k],trkhitz[i][j][k]);
+		  cout << ", corrected dqdx : " << corrected_dqdx << ", corrected dedx : " << corrected_dedx << endl; // SB debug
                   if (fid_xing && testneg_xing){
                     dqdx_value[j][x_bin-1].push_back(corrected_dqdx);
                     dedx_value[j][x_bin-1].push_back(corrected_dedx);
