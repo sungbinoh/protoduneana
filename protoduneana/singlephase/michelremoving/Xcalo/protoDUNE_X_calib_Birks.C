@@ -1,5 +1,5 @@
-#define protoDUNE_X_calib_cxx
-#include "protoDUNE_X_calib.h"
+#define protoDUNE_X_calib_Birks_cxx
+#include "protoDUNE_X_calib_Birks.h"
 #include <TH2.h>
 #include <TH3.h>
 #include <TStyle.h>
@@ -26,18 +26,19 @@
 using namespace std;
 
 ////defining recombination function
-float LAr_density=1.39;
+float LAr_density=1.383;
 float alp=0.93;
 float bet=0.212;
 //float dedx=2.08;
-float dedx=1.9;
+float ref_dedx=1.9;
+string ref_dedx_str = "1.9";
 bool userecom=true;
-bool useBirksModel=false;
+bool useBirksModel=true;
 bool sceon = true;
 float recom_factor(float totEf){
   if (!userecom) return 1;
-  float xsi=bet*dedx/(LAr_density*totEf);
-  float xsi0=bet*dedx/(LAr_density*0.4867);
+  float xsi=bet*ref_dedx/(LAr_density*totEf);
+  float xsi0=bet*ref_dedx/(LAr_density*0.4867);
   float rec0=log(alp+xsi0)/xsi0;
   return (rec0*xsi)/log(alp+xsi);
 }
@@ -49,8 +50,8 @@ double recom_factor_Birks(float totEF){
   //double A_B = 0.800; // == ICARUS : at 200, 350, 500 V/cm
   double k_B = 0.0486; // == ICARUS (kV/cm)(g/cm2 )/MeV
   
-  double dQdx_SCE = 1. / (1 + k_B * dedx / (Rho * totEF));
-  double dQdx_nominal = 1. / (1 + k_B * dedx / (Rho * 0.4867));
+  double dQdx_SCE = 1. / (1 + k_B * ref_dedx / (Rho * totEF));
+  double dQdx_nominal = 1. / (1 + k_B * ref_dedx / (Rho * 0.4867));
 
   //return dQdx_SCE / dQdx_nominal;
   return dQdx_nominal / dQdx_SCE;
@@ -112,7 +113,7 @@ float zoffsetbd(float xval,float yval,float zval){
 
 
 
-void protoDUNE_X_calib::Loop(TString mn)
+void protoDUNE_X_calib_Birks::Loop(TString mn)
 {
 
   if (fChain == 0) return;
@@ -183,7 +184,12 @@ void protoDUNE_X_calib::Loop(TString mn)
   ////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
 
-  TFile *file = new TFile(Form("Xcalo_mich%s_r%d.root",mn.Data(), run),"recreate");
+  TString output_file_str = "";
+  if(useBirksModel) output_file_str = Form("./outputs/Xcalo_mich%s_r%d_%s.root",mn.Data(), run, ref_dedx_str.c_str());
+  else output_file_str = Form("./outputs/Xcalo_mich%s_r%d_%s_Box.root",mn.Data(), run, ref_dedx_str.c_str());
+  cout << "SB debug output_file_str : " << output_file_str << endl;
+  //TFile *file = new TFile(Form("./outputs/Xcalo_mich%s_r%d_%s.root",mn.Data(), run, ref_dedx_str.c_str()),"recreate");
+  TFile *file = new TFile(output_file_str, "recreate");
   TTree t1("t1","a simple Tree with simple variables");//creating a tree example
   Int_t run_number;
   Double_t event_time1;
@@ -206,9 +212,11 @@ void protoDUNE_X_calib::Loop(TString mn)
     real_nentries = nentries;
   }
   Long64_t nbytes = 0, nb = 0;
-   for (Long64_t jentry=0; jentry<nentries;jentry++) {
-  // for (Long64_t jentry=0; jentry<10000;jentry++) {
+  for (Long64_t jentry=0; jentry<nentries;jentry++) { // == SB debug, original line
+    //for (Long64_t jentry=0; jentry<1;jentry++) { // == SB debug
     Long64_t ientry = LoadTree(jentry);
+    //cout << "SB debug, ref_dedx : " << ref_dedx << endl;
+
     if (ientry < 0) break;
     nb = fChain->GetEntry(jentry);   nbytes += nb;
     if(jentry%10000==0) cout<<jentry<<"/"<<real_nentries<<endl;
@@ -379,7 +387,7 @@ void protoDUNE_X_calib::Loop(TString mn)
   float global_median_dqdx_2=TMath::Median(all_dqdx_value_2.size(),&all_dqdx_value_2[0]); 
   global_med_2=global_median_dqdx_2;//Filling the Tree variable
   ofstream outfile0,outfile1,outfile2;
-  outfile2.open(Form("global_median_2_r%d.txt", run));
+  outfile2.open(Form("./outputs/global_median_2_r%d_%s.txt", run, ref_dedx_str.c_str()));
   outfile2<<run<<"\t"<<global_median_dqdx_2<<std::endl;
   //////////////////////////////////////////////////////////////////////////////////////
  
@@ -428,8 +436,8 @@ void protoDUNE_X_calib::Loop(TString mn)
   }
  
   float global_median_dqdx_1=TMath::Median(all_dqdx_value_1.size(),&all_dqdx_value_1[0]);
- global_med_1=global_median_dqdx_1;//Filling the Tree variable
-  outfile1.open(Form("global_median_1_r%d.txt", run));
+  global_med_1=global_median_dqdx_1;//Filling the Tree variable
+  outfile1.open(Form("./outputs/global_median_1_r%d_%s.txt", run, ref_dedx_str.c_str()));
   outfile1<<run<<"\t"<<global_median_dqdx_1<<std::endl; 
  
   //////////////////////////////////////////////////////////////////////////////////////
@@ -478,8 +486,8 @@ void protoDUNE_X_calib::Loop(TString mn)
     }
   }
   float global_median_dqdx_0=TMath::Median(all_dqdx_value_0.size(),&all_dqdx_value_0[0]); 
- global_med_0=global_median_dqdx_0;//Filling the Tree variable
-  outfile0.open(Form("global_median_0_r%d.txt",run));
+  global_med_0=global_median_dqdx_0;//Filling the Tree variable
+  outfile0.open(Form("./outputs/global_median_0_r%d_%s.txt",run, ref_dedx_str.c_str()));
   outfile0<<run<<"\t"<<global_median_dqdx_0<<std::endl; 
   run_number=runvalue;
   event_time1=time1;
@@ -524,7 +532,7 @@ void protoDUNE_X_calib::Loop(TString mn)
 
   file->Close(); 
   dqdx_X_hist_2->Draw();
-  TFile treefile(Form("globalmedians_cathanode_r%d.root",run),"RECREATE");
+  TFile treefile(Form("./outputs/globalmedians_cathanode_r%d_%s.root",run, ref_dedx_str.c_str()),"RECREATE");
   t1.Write();
 
 
@@ -544,7 +552,8 @@ int main(int argc, char *argv[]) {
   string infile = argv[1];
   string michelnumber = argv[2];
   string sce = argv[3];
-
+  ref_dedx_str = argv[4];
+  
   if (!(michelnumber == "0"||michelnumber == "1"||michelnumber == "2"||michelnumber == "3")){
     cout << "Error: Michel tree number must be 0,1, or 2" << endl;
     return 0;
@@ -583,7 +592,11 @@ int main(int argc, char *argv[]) {
     userecom = true;
     cout<<"SCE on"<<endl;
   }
-  protoDUNE_X_calib t(shtree);
+
+  ref_dedx = stof(ref_dedx_str);
+  cout << "Reference dE/dx : " << ref_dedx << endl;
+
+  protoDUNE_X_calib_Birks t(shtree);
   
   t.Loop(michelnumber.c_str());
 } // main

@@ -23,6 +23,7 @@ int main(int argc, char *argv[]) {
   }
 
   string filename = argv[1];
+  string ref_dedx = argv[2];
 
   gStyle->SetOptStat(0);
   gStyle->SetOptFit(0);
@@ -99,10 +100,10 @@ int main(int argc, char *argv[]) {
     cout<<"Plane "<<i<<endl;
     cout<<"Minimal chi2 "<<chisq0<<endl;
     cout<<"Calibration constant "<<C0<<"+-"<<C0-C1<<endl;
-    can[i]->Print(Form("calconst_%d.png",i));
-    can[i]->Print(Form("calconst_%d.pdf",i));
+    can[i]->Print(Form("calconst_%d_%s.png",i, ref_dedx.c_str()));
+    can[i]->Print(Form("calconst_%d_%s.pdf",i, ref_dedx.c_str()));
     ofstream outfile;
-    outfile.open(Form("calconst_%d.txt",i));
+    outfile.open(Form("calconst_%d_%s.txt",i, ref_dedx.c_str()));
     outfile<<C0<<" "<<C0-C1<<endl;
     outfile.close();
   }

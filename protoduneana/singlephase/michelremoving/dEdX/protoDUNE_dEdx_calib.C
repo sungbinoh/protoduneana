@@ -56,7 +56,7 @@ const double rho=1.396;//g/cm^3
 string outfile_name;
 string sce;
 TString mn = "2";
-bool use_Birk_model = false;
+bool use_Birk_model = true;
 
 double spline_KE[13];
 double spline_Range[13];

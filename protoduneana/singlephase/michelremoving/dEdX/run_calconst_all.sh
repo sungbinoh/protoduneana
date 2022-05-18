@@ -1,0 +1,11 @@
+calculate_calibration_constants output_1.5.root 1.5
+calculate_calibration_constants output_1.6.root 1.6
+calculate_calibration_constants output_1.7.root 1.7
+calculate_calibration_constants output_1.8.root 1.8
+calculate_calibration_constants output_1.9.root 1.9
+calculate_calibration_constants output_2.0.root 2.0
+calculate_calibration_constants output_2.1.root 2.1
+calculate_calibration_constants output_2.2.root 2.2
+calculate_calibration_constants output_2.3.root 2.3
+calculate_calibration_constants output_2.4.root 2.4
+calculate_calibration_constants output_2.5.root 2.5

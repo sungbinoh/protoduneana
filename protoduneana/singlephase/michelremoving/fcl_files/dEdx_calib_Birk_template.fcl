@@ -1,0 +1,46 @@
+FieldMap: "SCE_DataDriven_180kV_v4.root"
+
+OutputFile: "dedx_cal_out.root"
+
+YZCaloFile: "/dune/app/users/sungbino/ProtoDUNE/larsoft/srcs/protoduneana/protoduneana/singlephase/michelremoving/YZcalo_mich2_r5387.root"
+XCaloFile:  "/dune/app/users/sungbino/ProtoDUNE/larsoft/srcs/protoduneana/protoduneana/singlephase/michelremoving/outputs/Xcalo_mich2_r5387_REFDEDX.root"
+
+NormFactors: [
+NORM0,
+NORM1,
+NORM2
+]
+
+KE_Range: [
+  [10,  0.70437],
+  [14,  1.27937],
+  [20,  2.37894],
+  [30,  4.72636],
+  [40,  7.5788],
+  [80,  22.0917],
+  [100,  30.4441],
+  [140,  48.2235],
+  [200,  76.1461],
+  [300,  123.567],
+  [400,  170.845],
+  [800,  353.438],
+  [1000,  441.476]
+]
+
+#Plane0Start: 1.025e-3
+#Plane0End: 1.030e-3
+#Plane0Diff: .001e-3
+
+Plane0Start: 1.120e-3
+Plane0End: 1.160e-3
+Plane0Diff: .001e-3
+
+Plane1Start: 1.080e-3
+Plane1End: 1.120e-3
+Plane1Diff: .001e-3
+
+Plane2Start: 0.995e-3
+Plane2End: 1.035e-3
+Plane2Diff: .001e-3
+
+Method: Lite

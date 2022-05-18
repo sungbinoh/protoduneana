@@ -5,6 +5,13 @@ cet_make_exec( validate_calibration
                ${FHICLCPP}
                )
 
+cet_make_exec( validate_calibration_Birks
+               SOURCE protoDUNE_validate_calib_Birks.C
+               LIBRARIES
+               ROOT_BASIC_LIB_LIST
+               ${FHICLCPP}
+               )
+
 cet_make_exec( calculate_calibration_constants
                SOURCE calconst.C
                LIBRARIES
