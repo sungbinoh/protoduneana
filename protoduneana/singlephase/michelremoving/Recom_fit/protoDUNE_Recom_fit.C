@@ -30,6 +30,7 @@
 #include <TVectorD.h>
 #include <TFitResult.h>
 #include <TFitResultPtr.h>
+#include <TPaveText.h>
 
 #include "fhiclcpp/ParameterSet.h"
 #include "cetlib/filepath_maker.h"
@@ -413,7 +414,7 @@ void protoDUNE_Recom_fit::LoopLite(std::vector<double> & norm_factors,
 
   outfile.cd();
 
-  size_t nbin=12; // == SB debug, (dE/dx_theory) / Etot variable number of bins
+  size_t nbin=30; // == SB debug, (dE/dx_theory) / Etot variable number of bins
   double binsize=0.05; // == SB debug, (dE/dx_theory) / Etot variable bin size
   double bin_start = 3.0; // == SB debug, (dE/dx_theory) / Etot variable starts from
   //TH1D *dedx[nbin];
@@ -428,20 +429,29 @@ void protoDUNE_Recom_fit::LoopLite(std::vector<double> & norm_factors,
   vector<vector<float>> dedx_theory_median(3);
   vector<vector<float>> dedx_measured_median_err(3);
   vector<vector<float>> dedx_theory_median_err(3);
+  vector<vector<float>> dedx_measured_MPV(3);
+  vector<vector<float>> dedx_measured_MPV_err(3);
+  vector<vector<float>> dedx_theory_mean(3);
+  vector<vector<float>> dedx_theory_RMS(3);
+
 
   vector<vector<float>> Recom_factor(3);
   vector<vector<float>> Recom_factor_err(3);
 
   for(size_t i = 0; i < 3; i++) {
-    dedx_measured_value[i].resize(12);
-    dedx_theory_value[i].resize(12);
+    dedx_measured_value[i].resize(nbin);
+    dedx_theory_value[i].resize(nbin);
 
-    dedx_measured_median[i].resize(12);
-    dedx_theory_median[i].resize(12);
-    dedx_measured_median_err[i].resize(12);
-    dedx_theory_median_err[i].resize(12);
-    Recom_factor[i].resize(12);
-    Recom_factor_err[i].resize(12);
+    dedx_measured_median[i].resize(nbin);
+    dedx_theory_median[i].resize(nbin);
+    dedx_measured_median_err[i].resize(nbin);
+    dedx_theory_median_err[i].resize(nbin);
+    dedx_measured_MPV[i].resize(nbin);
+    dedx_measured_MPV_err[i].resize(nbin);
+    dedx_theory_mean[i].resize(nbin);
+    dedx_theory_RMS[i].resize(nbin);
+    Recom_factor[i].resize(nbin);
+    Recom_factor_err[i].resize(nbin);
 
     //dedx_measured_hist[i].push_back(std::vector<TH1D*>());
     //dedx_theory_hist[i].push_back(std::vector<TH1D*>());
@@ -577,7 +587,7 @@ void protoDUNE_Recom_fit::LoopLite(std::vector<double> & norm_factors,
         for(int j=0; j<TMath::Min(ntrkhits[i][ihitplane],3000); ++j){
           float ke = sp->Eval(trkresrange[i][ihitplane][j]);
 	  //cout << "SB debug trkresrange : " << trkresrange[i][ihitplane][j] << ", ke : " << ke << endl;
-          if (ke<100 || ke>450) continue;
+          if (ke<50 || ke>450) continue;
           if (trkpitch[i][ihitplane][j]>=0.5 && trkpitch[i][ihitplane][j]<=0.8 &&
               trkhity[i][ihitplane][j]>0 && trkhity[i][ihitplane][j]<600 &&
               trkhitz[i][ihitplane][j]>0 && trkhitz[i][ihitplane][j]<695) {
@@ -686,18 +696,45 @@ void protoDUNE_Recom_fit::LoopLite(std::vector<double> & norm_factors,
       dedx_measured_median[ihitplane][ibin] = this_measured_median;
       dedx_theory_median_err[ihitplane][ibin] = this_theory_median_err;
       dedx_measured_median_err[ihitplane][ibin] = this_measured_median_err;
+
+      float this_theory_mean = TMath::Mean(dedx_theory_value[ihitplane][ibin].size(), &dedx_theory_value[ihitplane][ibin][0]);
+      float this_theory_RMS = TMath::RMS(dedx_theory_value[ihitplane][ibin].size(), &dedx_theory_value[ihitplane][ibin][0]);
+
+      dedx_theory_mean[ihitplane][ibin] = this_theory_mean;
+      dedx_theory_RMS[ihitplane][ibin] = this_theory_RMS;
       
       //cout << "SB debug, this_theory_median : " << this_theory_median << " +- " << this_theory_median_err << ", this_measured_median : " << this_measured_median << " +- " << this_measured_median_err << endl; 
 
     }
   }
 
+  std::cout << "************************** Langau fit for dE/dx measured and gaussian fit for dE/dx theory  *****************************" << std::endl;
+  for(size_t ihitplane = 0; ihitplane < 3; ihitplane++) {
+    for(size_t ibin = 0; ibin < nbin; ibin++){
+      TF1 *fitsnr = runlangaufit(dedx_measured_hist[ihitplane][ibin], ihitplane);
+      double current_MPV = fitsnr->GetParameter(1);
+      double current_MPT_err = fitsnr->GetParError(1);
+      dedx_measured_MPV[ihitplane][ibin] = current_MPV;
+      dedx_measured_MPV_err[ihitplane][ibin] = current_MPT_err;
+    }
+  }
+
+
+
   //vector<vector<float>> Recom_factor(3);
   //vector<vector<float>> Recom_factor_err(3);
   for(size_t ihitplane = 0; ihitplane < 3; ihitplane++) {
     for(size_t ibin = 0; ibin < nbin; ibin++){
+      // == Use Median for dE/dx measured
+      /*
       float this_Recom_fator = dedx_theory_median[ihitplane][ibin] / dedx_measured_median[ihitplane][ibin];
       float this_err = this_Recom_fator * sqrt(pow(dedx_theory_median_err[ihitplane][ibin]/dedx_theory_median[ihitplane][ibin], 2) + pow(dedx_measured_median_err[ihitplane][ibin]/dedx_measured_median[ihitplane][ibin], 2));
+      */
+
+      // == Use Langau fit result for dE/dx measured and mean/RMS for dE/dx theory
+      float this_Recom_fator = dedx_theory_mean[ihitplane][ibin] / dedx_measured_MPV[ihitplane][ibin];
+      float this_err = this_Recom_fator * sqrt(pow(dedx_theory_RMS[ihitplane][ibin]/dedx_theory_mean[ihitplane][ibin], 2) + pow(dedx_measured_MPV_err[ihitplane][ibin]/dedx_measured_MPV[ihitplane][ibin], 2));
+
       Recom_factor[ihitplane][ibin] = this_Recom_fator;
       Recom_factor_err[ihitplane][ibin] = this_err;
 
@@ -706,8 +743,11 @@ void protoDUNE_Recom_fit::LoopLite(std::vector<double> & norm_factors,
   }
 
   TCanvas *c = new TCanvas("", "", 800, 600);
-  TH1D* this_template = new TH1D("", "", 1, 0., 4.);
-  this_template -> GetYaxis() -> SetRangeUser(0.5, 1.5);
+  gStyle->SetOptStat(0);
+  TH1D* this_template = new TH1D("", "", 1, 0., 5.);
+  this_template -> GetYaxis() -> SetRangeUser(0.5, 1.8);
+  this_template -> GetYaxis() -> SetTitle("1/R");
+  this_template -> GetXaxis() -> SetTitle("dE/dx / E ( MeV / (kV/cm) / (g/cm^2) )");
   this_template -> SetTitle("");
   this_template -> SetStats(0);
   this_template -> Draw();
@@ -732,8 +772,71 @@ void protoDUNE_Recom_fit::LoopLite(std::vector<double> & norm_factors,
   gr_plane1 -> Draw("same");
   gr_plane2 -> Draw("same");
 
-  c -> SaveAs("../plots/Recom_fit_Birks.pdf");
+  TF1 *fit0 = new TF1("fit1","pol1", 0., 5.);
+  TF1 *fit1 = new TF1("fit2","pol1", 0., 5.);
+  TF1 *fit2 = new TF1("fit3","pol1", 0., 5.);
+  fit0 -> SetLineStyle(9);
+  fit1 -> SetLineStyle(9);
+  fit2 -> SetLineStyle(9);
+  fit0 -> SetLineColor(kBlue);
+  fit1 -> SetLineColor(kRed);
+  fit2 -> SetLineColor(kGreen);
+  //fit0 -> SetStats(0);
+  //fit1 -> SetStats(0);
+  //fit2 -> SetStats(0);
 
+  gr_plane0 -> Fit(fit0, "R", "", 0., 5.0);
+  gr_plane1 -> Fit(fit1, "R", "", 0., 5.0);
+  gr_plane2 -> Fit(fit2, "R", "", 0., 5.0);
+
+  TLegend *legend = new TLegend(0.15, 0.7, 0.25, 0.8);
+  legend -> AddEntry(fit0, "plane0", "l");
+  legend -> AddEntry(fit1, "plane1", "l");
+  legend -> AddEntry(fit2, "plane2", "l");
+  legend -> Draw("same");
+
+  
+  c -> cd();
+  TPaveText *pt_0 = new TPaveText(0.15,0.15,0.35,0.4,"NDC");
+  TPaveText *pt_1 = new TPaveText(0.35,0.15,0.55,0.4,"NDC");
+  TPaveText *pt_2 = new TPaveText(0.55,0.15,0.75,0.4,"NDC");
+  
+  
+  double A_0 =  1. / fit0->GetParameter(0);
+  double A_1 =  1. / fit1->GetParameter(0);
+  double A_2 =  1. / fit2->GetParameter(0);
+  double A_0_err = fit0->GetParError(0) / pow(fit0->GetParameter(0),2);
+  double A_1_err = fit1->GetParError(0) / pow(fit1->GetParameter(0),2);
+  double A_2_err = fit2->GetParError(0) / pow(fit2->GetParameter(0),2);
+
+  double kB_0 = fit0->GetParameter(1) * rho * A_0;
+  double kB_1 = fit1->GetParameter(1) * rho * A_1;
+  double kB_2 = fit2->GetParameter(1) * rho * A_2;
+  double kB_0_err = kB_0 * sqrt(pow(A_0_err/A_0, 2) + pow(fit0->GetParError(1)/fit0->GetParameter(1), 2));
+  double kB_1_err = kB_1 * sqrt(pow(A_1_err/A_1, 2) + pow(fit1->GetParError(1)/fit1->GetParameter(1), 2));
+  double kB_2_err = kB_2 * sqrt(pow(A_2_err/A_2, 2) + pow(fit2->GetParError(1)/fit2->GetParameter(1), 2));
+
+  pt_0 -> AddText(Form("a = %3f pm %3f", fit0->GetParameter(1), fit0->GetParError(1))); ((TText*)pt_0->GetListOfLines()->Last())->SetTextColor(kBlue);
+  pt_1 -> AddText(Form("a = %3f pm %3f", fit1->GetParameter(1), fit1->GetParError(1))); ((TText*)pt_1->GetListOfLines()->Last())->SetTextColor(kRed);
+  pt_2 -> AddText(Form("a = %3f pm %3f", fit2->GetParameter(1), fit2->GetParError(1))); ((TText*)pt_2->GetListOfLines()->Last())->SetTextColor(kGreen);
+
+  pt_0 -> AddText(Form("b = %3f pm %3f", fit0->GetParameter(0), fit0->GetParError(0))); ((TText*)pt_0->GetListOfLines()->Last())->SetTextColor(kBlue);
+  pt_1 -> AddText(Form("b = %3f pm %3f", fit1->GetParameter(0), fit1->GetParError(0))); ((TText*)pt_1->GetListOfLines()->Last())->SetTextColor(kRed);
+  pt_2 -> AddText(Form("b = %3f pm %3f", fit2->GetParameter(0), fit2->GetParError(0))); ((TText*)pt_2->GetListOfLines()->Last())->SetTextColor(kGreen);
+
+  pt_0 -> AddText(Form("A = %3f pm %3f", A_0, A_0_err)); ((TText*)pt_0->GetListOfLines()->Last())->SetTextColor(kBlue);
+  pt_1 -> AddText(Form("A = %3f pm %3f", A_1, A_1_err)); ((TText*)pt_1->GetListOfLines()->Last())->SetTextColor(kRed);
+  pt_2 -> AddText(Form("A = %3f pm %3f", A_2, A_2_err)); ((TText*)pt_2->GetListOfLines()->Last())->SetTextColor(kGreen);
+
+  pt_0 -> AddText(Form("kB = %3f pm %3f", kB_0, kB_0_err)); ((TText*)pt_0->GetListOfLines()->Last())->SetTextColor(kBlue);
+  pt_1 -> AddText(Form("kB = %3f pm %3f", kB_1, kB_1_err)); ((TText*)pt_1->GetListOfLines()->Last())->SetTextColor(kRed);
+  pt_2 -> AddText(Form("kB = %3f pm %3f", kB_2, kB_2_err)); ((TText*)pt_2->GetListOfLines()->Last())->SetTextColor(kGreen);
+
+  pt_0 -> Draw("same");
+  pt_1 -> Draw("same");
+  pt_2 -> Draw("same");
+
+  c -> SaveAs("../plots/Recom_fit_Birks.pdf");
 
   ////////////////////////////////////// Fitting Landau+Gaussian function to the histogram ////////////////////////////////
   //TSpline3 *sp = new TSpline3("Cubic Spline", &spline_Range[0], &spline_KE[0],13,"b2e2",0,0);
