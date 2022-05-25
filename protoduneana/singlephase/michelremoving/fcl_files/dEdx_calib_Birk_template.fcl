@@ -31,16 +31,16 @@ KE_Range: [
 #Plane0End: 1.030e-3
 #Plane0Diff: .001e-3
 
-Plane0Start: 1.120e-3
-Plane0End: 1.160e-3
+Plane0Start: 1.155e-3
+Plane0End: 1.175e-3
 Plane0Diff: .001e-3
 
-Plane1Start: 1.080e-3
-Plane1End: 1.120e-3
+Plane1Start: 1.105e-3
+Plane1End: 1.125e-3
 Plane1Diff: .001e-3
 
-Plane2Start: 0.995e-3
-Plane2End: 1.035e-3
+Plane2Start: 1.025e-3
+Plane2End: 1.045e-3
 Plane2Diff: .001e-3
 
 Method: Lite

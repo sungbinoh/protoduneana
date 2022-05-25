@@ -1,12 +1,14 @@
 void Draw_validation(){
 
-  TFile *f0 = new TFile("validation_mich2_run5387.root");
+  //TFile *f0 = new TFile("validation_mich2_run5387.root");
+  TFile *f0 = new TFile("./outputs/validation_mich2_run_valid_1.9.root");
+
   TH1F *dedx_x_0 = (TH1F*) gDirectory -> Get("dedx_X_hist_0");
   TH1F *dedx_x_1 = (TH1F*) gDirectory -> Get("dedx_X_hist_1");
   TH1F *dedx_x_2 = (TH1F*) gDirectory -> Get("dedx_X_hist_2");
 
   TCanvas *c = new TCanvas("", "", 800, 600);
-  dedx_x_0 -> GetYaxis() -> SetRangeUser(1.86, 1.92);
+  dedx_x_0 -> GetYaxis() -> SetRangeUser(1.88, 1.95);
   dedx_x_0 -> SetLineColor(kBlack);
   dedx_x_0 -> SetTitle("");
   dedx_x_0 -> SetLineWidth(2);
@@ -35,7 +37,7 @@ void Draw_validation(){
 
   l -> Draw("same");
 
-  c -> SaveAs("./plots/dedx_X.pdf");
+  c -> SaveAs("./plots/dedx_X_Birks_1.9.pdf");
 
 
 }
