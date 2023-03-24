@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////
-// Class:  MCS_Tree_Maker
+// Class:  MCSTreeMaker
 // Module Type: analyzer
-// File: MCS_Tree_Maker_module.cc
+// File: MCSTreeMaker_module.cc
 // Author: Sungbin Oh | sungbino@fnal.gov
 // Description: Produe Tree with momentum and segement angles
 ////////////////////////////////////////////////////////////////////////
@@ -91,11 +91,11 @@ using namespace std;
 
 namespace dune{
 
-  class MCS_Tree_Maker : public art::EDAnalyzer {
+  class MCSTreeMaker : public art::EDAnalyzer {
   public:
 
-    explicit MCS_Tree_Maker(fhicl::ParameterSet const& pset);
-    virtual ~MCS_Tree_Maker();
+    explicit MCSTreeMaker(fhicl::ParameterSet const& pset);
+    virtual ~MCSTreeMaker();
 
     void beginJob();
     void endJob();
@@ -123,7 +123,7 @@ namespace dune{
     vector<double> trkendz;
     vector<double> trklen;
     vector<int>    TrkID;
-    vector<vector<int>>    ntrkhits;
+    vector<int>    ntrkhits;
     vector<vector<double>> trkdqdx;
     vector<vector<double>>  trkdedx;
     vector<vector<double>>  trkresrange;
@@ -152,7 +152,7 @@ namespace dune{
   }; 
 
   //========================================================================
-  MCS_Tree_Maker::MCS_Tree_Maker(fhicl::ParameterSet const& pset) :
+  MCSTreeMaker::MCSTreeMaker(fhicl::ParameterSet const& pset) :
     EDAnalyzer(pset),
     fHitsModuleLabel          (pset.get< std::string >("HitsModuleLabel","")         ),
     fTrackModuleLabel         (pset.get< std::string >("TrackModuleLabel","")        ),
@@ -164,12 +164,12 @@ namespace dune{
   }
  
   //========================================================================
-  MCS_Tree_Maker::~MCS_Tree_Maker(){
+  MCSTreeMaker::~MCSTreeMaker(){
   }
   //========================================================================
 
   //========================================================================
-  void MCS_Tree_Maker::beginJob(){
+  void MCSTreeMaker::beginJob(){
     std::cout<<"job begin..."<<std::endl;
     art::ServiceHandle<art::TFileService> tfs;
     fEventTree = tfs->make<TTree>("Event", "Event Tree from Reco");
@@ -212,13 +212,13 @@ namespace dune{
   }
 
   //========================================================================
-  void MCS_Tree_Maker::endJob(){     
+  void MCSTreeMaker::endJob(){     
 
   }
 
   //========================================================================
-  void MCS_Tree_Maker::beginRun(const art::Run&){
-    mf::LogInfo("MCS_Tree_Maker")<<"begin run..."<<std::endl;
+  void MCSTreeMaker::beginRun(const art::Run&){
+    mf::LogInfo("MCSTreeMaker")<<"begin run..."<<std::endl;
   }
   //========================================================================
 
@@ -226,7 +226,7 @@ namespace dune{
 
   //========================================================================
 
-  void MCS_Tree_Maker::analyze( const art::Event& evt){
+  void MCSTreeMaker::analyze( const art::Event& evt){
     reset();  
     std::vector<art::Ptr<recob::Track> > tracklist;
     auto trackListHandle = evt.getHandle< std::vector<recob::Track> >("pandoraTrack");
@@ -308,7 +308,6 @@ namespace dune{
       const recob::Track& track = *ptrack;
       auto pos = track.Vertex();
       auto dir_start = track.VertexDirection();
-      auto dir_end   = track.EndDirection();
       auto end = track.End();
       double theta_xz = std::atan2(dir_start.X(), dir_start.Z());
       double theta_yz = std::atan2(dir_start.Y(), dir_start.Z());  
@@ -319,7 +318,6 @@ namespace dune{
       float endy=end.Y();
       float endz=end.Z();
       float tracklength=track.Length();
-      size_t count = 0;
 
       /*************************************filling the values****************************/
       trackthetaxz.push_back(theta_xz);
@@ -338,7 +336,7 @@ namespace dune{
 	int planenum = calos[ical]->PlaneID().Plane;
 	if(planenum != 2) continue; // == Save only collection view hits
 	const size_t NHits = calos[ical] -> dEdx().size();
-	ntrkhits[cross_trks-1][planenum]=int(NHits);
+	ntrkhits.push_back(int(NHits));
 	vector<double> this_trkdqdx;
 	vector<double> this_trkdedx;
 	vector<double> this_trkresrange;
@@ -383,25 +381,24 @@ namespace dune{
 	  vector<double> this_true_hity;
 	  vector<double> this_true_hitz;
   
-	  int N_positions = (part.first)->Position().size();
 	  const simb::MCTrajectory & true_trajectory = (part.first)->Trajectory();
 	  auto true_proc_map = true_trajectory.TrajectoryProcesses();
 	  for( auto itProc = true_proc_map.begin(); itProc != true_proc_map.end(); ++itProc ){
 	    int index = itProc->first;
 	    //std::string process = true_trajectory.KeyToProcess(itProc->second);
 
-	    double this_hit_Px = true_beam_trajectory.Px(index);
-	    double this_hit_Py = true_beam_trajectory.Py(index);
-            double this_hit_Pz = true_beam_trajectory.Pz(index);
+	    double this_hit_Px = true_trajectory.Px(index);
+	    double this_hit_Py = true_trajectory.Py(index);
+            double this_hit_Pz = true_trajectory.Pz(index);
 	    double this_hit_P = sqrt(this_hit_Px*this_hit_Px + this_hit_Py*this_hit_Py + this_hit_Pz*this_hit_Pz);
 	    this_true_momentum.push_back(this_hit_P);
 	    this_true_Px.push_back(this_hit_Px);
 	    this_true_Py.push_back(this_hit_Py);
             this_true_Pz.push_back(this_hit_Pz);
 	 
-	    this_true_hitx.push_back(true_beam_trajectory.X(index));
-            this_true_hity.push_back(true_beam_trajectory.Y(index));
-            this_true_hitz.push_back(true_beam_trajectory.Z(index));
+	    this_true_hitx.push_back(true_trajectory.X(index));
+            this_true_hity.push_back(true_trajectory.Y(index));
+            this_true_hitz.push_back(true_trajectory.Z(index));
 	  }
 
 	  true_momentum.push_back(this_true_momentum);
@@ -421,13 +418,12 @@ namespace dune{
   } // end of analyze function
      
     /////////////////// Defintion of reset function ///////////
-  void MCS_Tree_Maker::reset(){
+  void MCSTreeMaker::reset(){
     isData = false;
     run = -99999;
     subrun = -99999;
     event = -99999;
     evttime = -99999;
-    cross_trks = -99999;
     all_trks = -99999;
     year_month_date=-99999;
     hour_min_sec=-99999;
@@ -463,5 +459,5 @@ namespace dune{
   }
   //////////////////////// End of definition ///////////////
     
-  DEFINE_ART_MODULE(MCS_Tree_Maker)
+  DEFINE_ART_MODULE(MCSTreeMaker)
 }

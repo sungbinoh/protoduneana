@@ -1,0 +1,94 @@
+#include "services_dune.fcl"
+#include "hitfindermodules_dune.fcl"
+#include "filters.fcl"
+#include "ProtoDUNEUnstableHVFilter.fcl"
+#include "signalservices_dune.fcl"
+#include "caldata_dune.fcl"
+#include "trackfindermodules_dune.fcl"
+#include "ecalibration.fcl"
+#include "triggeralgo_service.fcl"
+#include "photpropservices_dune.fcl"
+#include "ProtoDUNEDataUtils.fcl"
+#include "ProtoDUNEFembFilter.fcl"
+
+
+process_name: MCS_Tree_Maker
+
+services:
+{
+  #Load the service that manages root files for histograms.
+  TFileService: { fileName: "MCS_Tree_Maker.root" }
+  RandomNumberGenerator: {}                     #ART native random number generator
+  @table::protodune_services
+  message:      @local::standard_info
+  FileCatalogMetadata: @local::art_file_catalog_mc
+}
+services.PdspChannelMapService:      @local::pdspchannelmap
+#source is now a root file
+source:
+{
+  module_type: RootInput
+  maxEvents:  -1            # Number of events to create
+}
+physics:
+      {
+          producers:{
+              
+          }
+          filters:	
+          {
+              f1: @local::HVfilter
+              f2: @local::pdsp_fembfilter_all
+              
+          } 
+          fpath: [f1, f2]
+          
+          analyzers:{
+            MCS_Tree_Maker:
+              {
+                  module_type: "MCS_Tree_Maker"
+                  SelectEvents: [fpath]
+              }
+              MCS_Tree_Maker1:
+              {
+                  module_type: "MCS_Tree_Maker"
+                  SelectEvents: [fpath]
+              }
+              MCS_Tree_Maker2:
+              {
+                  module_type: "MCS_Tree_Maker"
+                  SelectEvents: [fpath]
+              }
+              MCS_Tree_Maker3:
+              {
+                  module_type: "MCS_Tree_Maker"
+                  SelectEvents: [fpath]
+              }
+          }
+ 
+          
+          ana:  [ MCS_Tree_Maker, MCS_Tree_Maker1, MCS_Tree_Maker2, MCS_Tree_Maker3 ]
+          end_paths:     [  ana ] 
+}
+
+# define the list of LArSoft modules to run through the simulate path
+physics.filters.f2.DataUtils.RawDigitTimeStampTag:        "caldata:dataprep"
+physics.analyzers.MCS_Tree_Maker.TrackModuleLabel:        "pandoraTrack"
+physics.analyzers.MCS_Tree_Maker.CalorimetryModuleLabel:  "pandoracalonosce"
+physics.analyzers.MCS_Tree_Maker.HitsModuleLabel:  "hitpdune"
+physics.analyzers.MCS_Tree_Maker.SaveTrackInfo: true
+
+physics.analyzers.MCS_Tree_Maker1.TrackModuleLabel:        "pandoraTrack"
+physics.analyzers.MCS_Tree_Maker1.CalorimetryModuleLabel:  "pandoracalo"
+physics.analyzers.MCS_Tree_Maker1.HitsModuleLabel:  "hitpdune"
+physics.analyzers.MCS_Tree_Maker1.SaveTrackInfo: true
+
+physics.analyzers.MCS_Tree_Maker2.TrackModuleLabel:        "pandoraTrack"
+physics.analyzers.MCS_Tree_Maker2.CalorimetryModuleLabel:  "pandoracalinoxyzt"
+physics.analyzers.MCS_Tree_Maker2.HitsModuleLabel:  "hitpdune"
+physics.analyzers.MCS_Tree_Maker2.SaveTrackInfo: true
+
+physics.analyzers.MCS_Tree_Maker3.TrackModuleLabel:        "pandoraTrack"
+physics.analyzers.MCS_Tree_Maker3.CalorimetryModuleLabel:  "pandoracali"
+physics.analyzers.MCS_Tree_Maker3.HitsModuleLabel:  "hitpdune"
+physics.analyzers.MCS_Tree_Maker3.SaveTrackInfo: true
