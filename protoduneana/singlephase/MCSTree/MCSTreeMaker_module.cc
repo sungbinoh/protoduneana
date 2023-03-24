@@ -104,7 +104,7 @@ namespace dune{
     void reset();
     
   private:
-    TTree* fEventTree;
+    TTree*   fEventTree;
     bool     isData;
     Int_t    run;                  
     Int_t    subrun;               
@@ -113,6 +113,7 @@ namespace dune{
     Int_t    year_month_date;
     Int_t    hour_min_sec;
     Int_t    all_trks;
+    Int_t    N_tracklist;
     vector<double>  trackthetaxz;
     vector<double>  trackthetayz;
     vector<double> trkstartx;
@@ -181,6 +182,7 @@ namespace dune{
     fEventTree->Branch("year_month_date", &year_month_date,"year_month_date/I");
     fEventTree->Branch("hour_min_sec", &hour_min_sec,"hour_min_sec/I");
     fEventTree->Branch("all_trks",&all_trks,"all_trks/I");
+    fEventTree->Branch("N_tracklist", &N_tracklist, "N_tracklist/I");
     fEventTree->Branch("trackthetaxz","vector<double>", &trackthetaxz);
     fEventTree->Branch("trackthetayz","vector<double>", &trackthetayz);
     fEventTree->Branch("trkstartx","vector<double>", &trkstartx);
@@ -191,7 +193,7 @@ namespace dune{
     fEventTree->Branch("trkendz","vector<double>", &trkendz);
     fEventTree->Branch("trklen","vector<double>", &trklen);
     fEventTree->Branch("TrkID","vector<int>", &TrkID);
-    fEventTree->Branch("ntrkhits","vector<vector<int>>", &ntrkhits);
+    fEventTree->Branch("ntrkhits","vector<int>", &ntrkhits);
     fEventTree->Branch("trkdqdx","vector<vector<double>>", &trkdqdx);
     fEventTree->Branch("trkdedx","vector<vector<double>>", &trkdedx);
     fEventTree->Branch("trkresrange","vector<vector<double>>", &trkresrange);
@@ -286,13 +288,14 @@ namespace dune{
     all_trks=0;
     // size_t NHits=hitlist.size();
     size_t NTracks = tracklist.size();
+    N_tracklist = int(NTracks);
     for(size_t i=0; i<NTracks;++i){
       art::Ptr<recob::Track> ptrack(trackListHandle, i);
       if(fTrackModuleLabel=="pandoraTrack"){
 	std::vector<art::Ptr<recob::PFParticle>> pfps=pfp_trk_assn.at(i);
 	if(!pfps.size()) continue;
-	std::vector<art::Ptr<anab::T0>> t0s=trk_t0_assn_v.at(pfps[0].key());
-	if(!t0s.size()) continue;
+	//std::vector<art::Ptr<anab::T0>> t0s=trk_t0_assn_v.at(pfps[0].key());
+	//if(!t0s.size()) continue;
 	//auto t0 = t0s.at(0);
 	// double t_zero=t0->Time();
       }
@@ -425,6 +428,7 @@ namespace dune{
     event = -99999;
     evttime = -99999;
     all_trks = -99999;
+    N_tracklist = -99999;
     year_month_date=-99999;
     hour_min_sec=-99999;
 
