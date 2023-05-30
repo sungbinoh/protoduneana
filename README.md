@@ -37,14 +37,14 @@ The following configuration is defined:
   The build directory will be under .
   The local product directory will be under .
 
-MRB_BUILDDIR is /dune/app/users/sungbino/ProtoDUNE/test_for_Abbey/build_slf7.x86_64
-MRB_SOURCE is /dune/app/users/sungbino/ProtoDUNE/test_for_Abbey/srcs 
+MRB_BUILDDIR is /dune/app/users/<user_name>/ProtoDUNE/calib/build_slf7.x86_64
+MRB_SOURCE is /dune/app/users/<user_name>/ProtoDUNE/calib/srcs 
 INFO: cannot find larsoft/v09_49_00d00/releaseDB/base_dependency_database
       or larsoftcode/v09_49_00d00/releaseDB/base_dependency_database
       mrb checkDeps and pullDeps will not have complete information
 
 IMPORTANT: You must type
-    source /dune/app/users/sungbino/ProtoDUNE/test_for_Abbey/localProducts_larsoft_v09_49_00d00_e20_prof/setup
+    source /dune/app/users/<user_name>/ProtoDUNE/calib/localProducts_larsoft_v09_49_00d00_e20_prof/setup
 NOW and whenever you log in
 ```
 Then,
@@ -56,13 +56,13 @@ You will see messages like
 MRB_PROJECT=larsoft
 MRB_PROJECT_VERSION=v09_49_00d00
 MRB_QUALS=e20:prof
-MRB_TOP=/dune/app/users/sungbino/ProtoDUNE/test_for_Abbey
-MRB_SOURCE=/dune/app/users/sungbino/ProtoDUNE/test_for_Abbey/srcs
-MRB_BUILDDIR=/dune/app/users/sungbino/ProtoDUNE/test_for_Abbey/build_slf7.x86_64
-MRB_INSTALL=/dune/app/users/sungbino/ProtoDUNE/test_for_Abbey/localProducts_larsoft_v09_49_00d00_e20_prof
+MRB_TOP=/dune/app/users/<user_name>/ProtoDUNE/calib
+MRB_SOURCE=/dune/app/users/<user_name>/ProtoDUNE/calib/srcs
+MRB_BUILDDIR=/dune/app/users/<user_name>/ProtoDUNE/calib/build_slf7.x86_64
+MRB_INSTALL=/dune/app/users/<user_name>/ProtoDUNE/calib/localProducts_larsoft_v09_49_00d00_e20_prof
 
-PRODUCTS=/dune/app/users/sungbino/ProtoDUNE/test_for_Abbey/localProducts_larsoft_v09_49_00d00_e20_prof:/cvmfs/dune.opensciencegrid.org/products/dune:/cvmfs/larsoft.opensciencegrid.org/products:/cvmfs/larsoft.opensciencegrid.org/packages:/cvmfs/fermilab.opensciencegrid.org/products/common/db/
-CETPKG_INSTALL=/dune/app/users/sungbino/ProtoDUNE/test_for_Abbey/localProducts_larsoft_v09_49_00d00_e20_prof
+PRODUCTS=/dune/app/users/<user_name>/ProtoDUNE/calib/localProducts_larsoft_v09_49_00d00_e20_prof:/cvmfs/dune.opensciencegrid.org/products/dune:/cvmfs/larsoft.opensciencegrid.org/products:/cvmfs/larsoft.opensciencegrid.org/packages:/cvmfs/fermilab.opensciencegrid.org/products/common/db/
+CETPKG_INSTALL=/dune/app/users/<user_name>/ProtoDUNE/calib/localProducts_larsoft_v09_49_00d00_e20_prof
 ```
 Let's copy "protoduneana"
 ```
@@ -128,12 +128,12 @@ $ mrbsetenv
 ```
 You will see message like
 ```
-The working build directory is /dune/app/users/sungbino/ProtoDUNE/test_for_Abbey/build_slf7.x86_64
-The source code directory is /dune/app/users/sungbino/ProtoDUNE/test_for_Abbey/srcs
+The working build directory is /dune/app/users/<user_name>/ProtoDUNE/calib/build_slf7.x86_64
+The source code directory is /dune/app/users/<user_name>/ProtoDUNE/calib/srcs
 ----------- check this block for errors -----------------------
 INFO: mrb v6_08_00 requires cetmodules >= 2.31.00 to run: attempting to configure...v3_21_01 OK
 ----------------------------------------------------------------
-To inspect build variable settings, execute /dune/app/users/sungbino/ProtoDUNE/test_for_Abbey/build_slf7.x86_64/cetpkg_info.sh
+To inspect build variable settings, execute /dune/app/users/<user_name>/ProtoDUNE/calib/build_slf7.x86_64/cetpkg_info.sh
 
 Please use "buildtool" (or "mrb b") to configure and build MRB project "larsoft", e.g.:
 
@@ -156,10 +156,19 @@ INFO: stage install SUCCESS for MRB project larsoft v09_49_00d00
 ## Run
 Please note that you can use these commands to run codes in the area for next login's
 ```
-$ cd /dune/app/users/<user_name>/ProtoDUNE/calib
+$ cd /dune/app/users/
+
+
+
+
+
+
+
+
+/ProtoDUNE/calib
 $ source /cvmfs/dune.opensciencegrid.org/products/dune/setup_dune.sh
 $ setup dunesw v09_49_00d00 -q e20:prof
-$ source /dune/app/users/sungbino/ProtoDUNE/larsoft/localProducts_larsoft_v09_49_00d00_e20_prof/setup
+$ source /dune/app/users/<user_name>/ProtoDUNE/larsoft/localProducts_larsoft_v09_49_00d00_e20_prof/setup
 $ mrbslp
 $ mrbsetenv
 ```
@@ -347,10 +356,68 @@ TFile**		output.root
   .
   .
 ```
-Check chi2_plane_* and check where are minimum points.
-Using those numbers, scan calibration constatns with smaller step (0.001e-3) with 0.02e-3 range.
-For example, the bellow figure shows a minimum value near 1.110e-3. So, we can scan in 1.109e-3 to 1.110e-3 range with 0.001e-3 step.
+Check chi2_plane_* TGraph objects and check where are minimum points.
+Using those numbers, scan calibration constatns with smaller step (0.001e-3) and narrower (0.020e-3) range.
+For example, the bellow figures show a minimum value near 1.100e-3. So, we can scan in 1.109e-3 to 1.110e-3 range with 0.001e-3 step.
 
 ![Example chi2 distribution](./example_chi2_2.png)
 ![Example chi2 distribution zoomed](./example_chi2_zoom.png)
 
+After modifying the `./dEdx/protoDUNE_dEdx_calib.fcl` with narrower range and step size, we should run the code once more.
+```
+$ dEdX_calibration -i input_run5387.txt -c dEdX/protoDUNE_dEdx_calib.fcl -o output.root
+```
+
+To extract calibration constant for each plane, modify `./scripts/calconst.C`.
+- Line 63, change to 
+```
+gr[i]->Fit("pol2","RQ","",bestx-0.003e-3, bestx+0.003e-3);
+```
+- Line 72 - 73 : modify to
+```
+double x1 = C0-(C0-C1)*10;                                                                                                                                                                      
+double x2 = C0+(C0-C1)*10;
+```
+Then, build the area again,
+```
+$ mrb i -j4
+```
+Then, run
+```
+$ calculate_calibration_constants output.root
+```
+You will see messages with measured calibration constants like
+```
+OBJ: TStyle	protoDUNEStyle	ProtoDUNE Style : 0 at: 0x45e2500
+Plane 0
+Minimal chi2 32.9853
+Calibration constant 0.00123128+-1.10254e-06
+Info in <TCanvas::Print>: png file calconst_0.png has been created
+Info in <TCanvas::Print>: pdf file calconst_0.pdf has been created
+Plane 1
+Minimal chi2 46.921
+Calibration constant 0.0011845+-9.95166e-07
+Info in <TCanvas::Print>: png file calconst_1.png has been created
+Info in <TCanvas::Print>: pdf file calconst_1.pdf has been created
+Plane 2
+Minimal chi2 49.4794
+Calibration constant 0.0010942+-7.47859e-07
+Info in <TCanvas::Print>: png file calconst_2.png has been created
+Info in <TCanvas::Print>: pdf file calconst_2.pdf has been created
+```
+and new files with chi2 shapes and fitting results with 2nd order polynomial.
+```
+-bash-4.2$ ls -lht
+total 4.7M
+-rw-r--r-- 1 sungbino dune    22 May 30 16:05 calconst_2.txt
+-rw-r--r-- 1 sungbino dune   15K May 30 16:05 calconst_2.pdf
+-rw-r--r-- 1 sungbino dune   13K May 30 16:05 calconst_2.png
+-rw-r--r-- 1 sungbino dune    22 May 30 16:05 calconst_1.txt
+-rw-r--r-- 1 sungbino dune   15K May 30 16:05 calconst_1.pdf
+-rw-r--r-- 1 sungbino dune   13K May 30 16:05 calconst_1.png
+-rw-r--r-- 1 sungbino dune    23 May 30 16:05 calconst_0.txt
+-rw-r--r-- 1 sungbino dune   16K May 30 16:05 calconst_0.pdf
+-rw-r--r-- 1 sungbino dune   14K May 30 16:05 calconst_0.png
+```
+You can check if chi2 shape is reasonable. Here is an example.
+![Example chi2 fitted distribution](./calconst_2.png)
