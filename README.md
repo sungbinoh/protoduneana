@@ -349,3 +349,8 @@ TFile**		output.root
 ```
 Check chi2_plane_* and check where are minimum points.
 Using those numbers, scan calibration constatns with smaller step (0.001e-3) with 0.02e-3 range.
+For example, the bellow figure shows a minimum value near 1.110e-3. So, we can scan in 1.109e-3 to 1.110e-3 range with 0.001e-3 step.
+
+![Example chi2 distribution](./example_chi2_2.png)
+![Example chi2 distribution zoomed](./example_chi2_zoom.png)
+
