@@ -156,19 +156,10 @@ INFO: stage install SUCCESS for MRB project larsoft v09_49_00d00
 ## Run
 Please note that you can use these commands to run codes in the area for next login's
 ```
-$ cd /dune/app/users/
-
-
-
-
-
-
-
-
-/ProtoDUNE/calib
+$ cd /dune/app/users/<user_name>/ProtoDUNE/calib
 $ source /cvmfs/dune.opensciencegrid.org/products/dune/setup_dune.sh
 $ setup dunesw v09_49_00d00 -q e20:prof
-$ source /dune/app/users/<user_name>/ProtoDUNE/larsoft/localProducts_larsoft_v09_49_00d00_e20_prof/setup
+$ source /dune/app/users/<user_name>/ProtoDUNE/calib/localProducts_larsoft_v09_49_00d00_e20_prof/setup
 $ mrbslp
 $ mrbsetenv
 ```
@@ -421,3 +412,6 @@ total 4.7M
 ```
 You can check if chi2 shape is reasonable. Here is an example.
 ![Example chi2 fitted distribution](./calconst_2.png)
+
+Please note that plane 0 and 1 are induction planes and plane 2 is the collection plane.
+So, you can use calibration constant for the plane 2 in most cases (which is 1.0942e-3 for the example figure).
