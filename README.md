@@ -287,3 +287,65 @@ total 1.5M
 .
 .
 ```
+We will use contents in `global_median_*_r5387.txt` files for the calibration constant measurement.
+
+### dE/dx calibration - measuring the calibration constant
+We should modify some codes.
+First, open the `./dEdX/protoDUNE_dEdx_calib.C`,
+- Line 55 : modify/check the LAr density
+- Line 374 : modify/check the LAr density
+- Line 377 - 378 : modify/check the modified box model parameters
+Then, build the area again,
+```
+$ mrb i -j4
+```
+Then, modify the `./dEdX/protoDUNE_dEdx_calib.fcl`.
+- Line 5 - 6 : Modify directory to `/dune/app/users/<user_name>/ProtoDUNE/calib/srcs/protoduneana/protoduneana/singlephase/michelremoving/`, as well as run number to 5387. For example,
+```
+YZCaloFile: "/dune/app/users/<user_name>/ProtoDUNE/calib/srcs/protoduneana/protoduneana/singlephase/michelremoving/YZcalo_mich2_r5387.root"
+XCaloFile:  "/dune/app/users/<user_name>/ProtoDUNE/calib/srcs/protoduneana/protoduneana/singlephase/michelremoving/Xcalo_mich2_r5387.root"
+```
+- Line 9 - 11 : Modify numbers to second numbers in `global_median_*_r5387.txt` files. For example,
+```
+NormFactors: [
+66.7543,
+64.7201,
+60.0065
+]
+```
+- Line 34 - 44 : These lines define ranges and steps to scan for calibration constant values. We will calculate chi2 based on comparisons between Vavilov MPVs and Laudau+Gaussain convoluted functions' MPVs of stopped muons' dE/dx disributions. A calibration constant with the mininum chi2 will be the measured calibration constant for a plane. So, it is good to start with a wide range with big step size to look for a region with the minimum chi2. Then, we can zoom into that region to measure calibration constants with better accuracy. Let's start with 0.02e-03 step size in the range of 0.900e-3 to 1.300e-3.
+```
+Plane0Start: 0.990e-3
+Plane0End: 1.030e-3
+Plane0Diff: .001e-3
+
+Plane1Start: 1.025e-3
+Plane1End: 1.026e-3
+Plane1Diff: .001e-3
+
+Plane2Start: 1.011e-3
+Plane2End: 1.012e-3
+Plane2Diff: .001e-3
+```
+To run,
+```
+$ dEdX_calibration -i input_run5387.txt -c dEdX/protoDUNE_dEdx_calib.fcl -o output.root
+```
+It will take several minutes and make a new file `output.root`.
+You can check chi2 shape inside the `output.root`.
+```
+$ root -l output.root 
+new TBrroot [0] 
+Attaching file output.root as _file0...
+root [1] .ls
+TFile**		output.root	
+ TFile*		output.root	
+  KEY: TGraph	chi2_plane_0;1	Graph
+  KEY: TGraph	chi2_plane_1;1	Graph
+  KEY: TGraph	chi2_plane_2;1	Graph
+  .
+  .
+  .
+```
+Check chi2_plane_* and check where are minimum points.
+Using those numbers, scan calibration constatns with smaller step (0.001e-3) with 0.02e-3 range.
