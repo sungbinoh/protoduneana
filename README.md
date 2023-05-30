@@ -17,7 +17,7 @@ $ cd ProtoDUNE
 $ mkdir calib
 $ cd calib
 ```
-We will use dunesw version v09_49_00d00 -q e20:prof.
+We will use dunesw version `v09_49_00d00 -q e20:prof`.
 First,
 ```
 $ source /cvmfs/dune.opensciencegrid.org/products/dune/setup_dune.sh
@@ -146,3 +146,58 @@ Then, you can build the area,
 ```
 $ mrb i -j4
 ```
+You should see the following message after building the area.
+```
+------------------------------------
+INFO: stage install SUCCESS for MRB project larsoft v09_49_00d00
+------------------------------------
+```
+
+## Run
+Please note that you can use these commands to run codes in the area for next login's
+```
+$ cd /dune/app/users/<user_name>/ProtoDUNE/calib
+$ source /cvmfs/dune.opensciencegrid.org/products/dune/setup_dune.sh
+$ setup dunesw v09_49_00d00 -q e20:prof
+$ source /dune/app/users/sungbino/ProtoDUNE/larsoft/localProducts_larsoft_v09_49_00d00_e20_prof/setup
+$ mrbslp
+$ mrbsetenv
+```
+
+Let's assume that you are on `/dune/app/users/<user_name>/ProtoDUNE/calib`. Go to the directory where we have codes for calibration
+```
+$ cd srcs/protoduneana/protoduneana/singlephase/michelremoving/
+```
+Make a txt file named as `input_run5387.txt` with contents
+```
+root://fndca1.fnal.gov:1094/pnfs/fnal.gov/usr/dune/tape_backed/dunepro/protodune-sp/root-tuple/2020/detector/physics/PDSPProd4/00/00/53/87/np04_run005387_PDSPProd4_michelremoving_merged_0_200.root
+root://fndca1.fnal.gov:1094/pnfs/fnal.gov/usr/dune/tape_backed/dunepro/protodune-sp/root-tuple/2020/detector/physics/PDSPProd4/00/00/53/87/np04_run005387_PDSPProd4_michelremoving_merged_200_400.root
+root://fndca1.fnal.gov:1094/pnfs/fnal.gov/usr/dune/tape_backed/dunepro/protodune-sp/root-tuple/2020/detector/physics/PDSPProd4/00/00/53/87/np04_run005387_PDSPProd4_michelremoving_merged_400_600.root
+root://fndca1.fnal.gov:1094/pnfs/fnal.gov/usr/dune/tape_backed/dunepro/protodune-sp/root-tuple/2020/detector/physics/PDSPProd4/00/00/53/87/np04_run005387_PDSPProd4_michelremoving_merged_600_800.root
+root://fndca1.fnal.gov:1094/pnfs/fnal.gov/usr/dune/tape_backed/dunepro/protodune-sp/root-tuple/2020/detector/physics/PDSPProd4/00/00/53/87/np04_run005387_PDSPProd4_michelremoving_merged_800_950.root
+```
+
+Get a valid access to those root files using commands bellow (I recommand make a .sh file in your home direcoty with those commands for your convenience).
+```
+$ kx509
+$ export EXPERIMENT=dune
+$ export ROLE=Analysis
+$ voms-proxy-init -rfc -noregen -voms dune:/dune/Role=$ROLE -valid 24:00
+```
+
+### yz correction
+Run
+```
+$ make_yz_correction input_run5387.txt 2
+```
+You will have a new file (`YZcalo_mich2_r0.root`)in the directory.
+```
+-bash-4.2$ ls -lht
+total 384K
+-rw-r--r-- 1 sungbino dune  23K May 30 10:31 YZcalo_mich2_r0.root
+-rw-r--r-- 1 sungbino dune  993 May 30 10:31 input_run5387.txt
+.
+.
+.
+```
+
