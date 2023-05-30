@@ -168,7 +168,7 @@ Let's assume that you are on `/dune/app/users/<user_name>/ProtoDUNE/calib`. Go t
 ```
 $ cd srcs/protoduneana/protoduneana/singlephase/michelremoving/
 ```
-Make a txt file named as `input_run5387.txt` with contents
+Make a txt file named as `input_run5387.txt` with contents.
 ```
 root://fndca1.fnal.gov:1094/pnfs/fnal.gov/usr/dune/tape_backed/dunepro/protodune-sp/root-tuple/2020/detector/physics/PDSPProd4/00/00/53/87/np04_run005387_PDSPProd4_michelremoving_merged_0_200.root
 root://fndca1.fnal.gov:1094/pnfs/fnal.gov/usr/dune/tape_backed/dunepro/protodune-sp/root-tuple/2020/detector/physics/PDSPProd4/00/00/53/87/np04_run005387_PDSPProd4_michelremoving_merged_200_400.root
@@ -176,7 +176,7 @@ root://fndca1.fnal.gov:1094/pnfs/fnal.gov/usr/dune/tape_backed/dunepro/protodune
 root://fndca1.fnal.gov:1094/pnfs/fnal.gov/usr/dune/tape_backed/dunepro/protodune-sp/root-tuple/2020/detector/physics/PDSPProd4/00/00/53/87/np04_run005387_PDSPProd4_michelremoving_merged_600_800.root
 root://fndca1.fnal.gov:1094/pnfs/fnal.gov/usr/dune/tape_backed/dunepro/protodune-sp/root-tuple/2020/detector/physics/PDSPProd4/00/00/53/87/np04_run005387_PDSPProd4_michelremoving_merged_800_950.root
 ```
-
+Note that the ProtoDUNE-SP's Run5387 is used as general reference for Run1 calibration.
 Get a valid access to those root files using commands bellow (I recommand make a .sh file in your home direcoty with those commands for your convenience).
 ```
 $ kx509
@@ -185,19 +185,105 @@ $ export ROLE=Analysis
 $ voms-proxy-init -rfc -noregen -voms dune:/dune/Role=$ROLE -valid 24:00
 ```
 
-### yz correction
-Run
+### Uniformity correction : YZ correction
+Run the code at `/dune/app/users/<user_name>/ProtoDUNE/calib/srcs/protoduneana/protoduneana/singlephase/michelremoving/`.
 ```
 $ make_yz_correction input_run5387.txt 2
 ```
-You will have a new file (`YZcalo_mich2_r0.root`)in the directory.
+It will take several minutes with messages like
+```
+2
+michelremoving2/Event
+Plugin version SecClnt v5.1.0 is incompatible with secztn v5.5.3 (must be <= 5.1.x) in sec.protocol libXrdSecztn-5.so
+Process Run 5387
+0/122143
+10000/122143
+20000/122143
+30000/122143
+40000/122143
+50000/122143
+60000/122143
+70000/122143
+80000/122143
+90000/122143
+100000/122143
+110000/122143
+120000/122143
+*************** Calculating the local median dQ/dx values for each Y-Z cell ******************
+********************** Calculating fractional dQ/dx corrections for each Y-Z cell ********************
+******************** Calculating corrected dQ/dx value for each Y-Z cell **********************
+********************** Calculating fractional dQ/dx corrections for each Y-Z cell ********************
+******************** Calculating corrected dQ/dx value for each Y-Z cell **********************
+********************** Calculating fractional dQ/dx corrections for each Y-Z cell ********************
+******************** Calculating corrected dQ/dx value for each Y-Z cell **********************
+Info in <TCanvas::MakeDefCanvas>:  created default TCanvas with name c1
+crossing tracks 147931
+*************** Y_Z_Correction_make_class.C macro has ended ******************
+```
+Then, you will have a new file (`YZcalo_mich2_r5387.root`)in the directory.
 ```
 -bash-4.2$ ls -lht
 total 384K
--rw-r--r-- 1 sungbino dune  23K May 30 10:31 YZcalo_mich2_r0.root
--rw-r--r-- 1 sungbino dune  993 May 30 10:31 input_run5387.txt
+-rw-r--r-- 1 sungbino dune 1009K May 30 10:39 YZcalo_mich2_r5387.root
+-rw-r--r-- 1 sungbino dune   993 May 30 10:31 input_run5387.txt
 .
 .
 .
 ```
 
+### Uniformity correction : X correction
+Before running, we should modify/check codes for several values.
+Open `./Xcalo/protoDUNE_X_calib.C`, and modify
+- Line 29 : modify/checkthe liquid argon density value
+- Line 30 - 31 : modify/check the modified box model parameters
+Then, build the area again,
+```
+$ mrb i -j4
+```
+Let's run at `/dune/app/users/<user_name>/ProtoDUNE/calib/srcs/protoduneana/protoduneana/singlephase/michelremoving/`,
+```
+$ make_x_correction input_run5387.txt 2 1
+```
+It will take several minute with messages bellow.
+```
+michelremoving2/Event
+SCE on
+efield at the anode neg0.432389
+efield at the anode pos0.449398
+Plugin version SecClnt v5.1.0 is incompatible with secztn v5.5.3 (must be <= 5.1.x) in sec.protocol libXrdSecztn-5.so
+0/122143
+10000/122143
+20000/122143
+30000/122143
+40000/122143
+50000/122143
+60000/122143
+70000/122143
+80000/122143
+90000/122143
+100000/122143
+110000/122143
+120000/122143
+*************** Calculating the local median dQ/dx values for each Y-Z cell ******************
+**************** Calculating fractional correction for each x cell *********************
+**************** Calculating XYZ corrected dQ/dx values ********************
+**************** Calculating fractional correction for each x cell *********************
+**************** Calculating XYZ corrected dQ/dx values ********************
+**************** Calculating fractional correction for each x cell *********************
+**************** Calculating XYZ corrected dQ/dx values ********************
+Info in <TCanvas::MakeDefCanvas>:  created default TCanvas with name c1
+*************** X_Correction_make_class.C macro has ended ******************
+```
+with several new files,
+```
+-bash-4.2$ ls -lht
+total 1.5M
+-rw-r--r-- 1 sungbino dune    13 May 30 10:56 global_median_0_r5387.txt
+-rw-r--r-- 1 sungbino dune    13 May 30 10:56 global_median_1_r5387.txt
+-rw-r--r-- 1 sungbino dune    13 May 30 10:56 global_median_2_r5387.txt
+-rw-r--r-- 1 sungbino dune  5.9K May 30 10:56 globalmedians_cathanode_r5387.root
+-rw-r--r-- 1 sungbino dune   17K May 30 10:56 Xcalo_mich2_r5387.root
+.
+.
+.
+```
